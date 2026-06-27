@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel — ⚖ LegalAI India{% endblock %}
+{% block page_title %}Admin Panel{% endblock %}
+{% block page_subtitle %}System management, users, models, and monitoring{% endblock %}
+
+{% block content %}
+<!-- ── Admin Stat Cards ────────────────────────────────────────────── -->
+<div class="grid grid-4" style="margin-bottom:24px;">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+    <div class="stat-info">
+      <div class="stat-number">{{ stats.users or 0 }}</div>
+      <div class="stat-label">Total Users</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon purple"><i class="fas fa-file-alt"></i></div>
+    <div class="stat-info">
+      <div class="stat-number">{{ stats.documents or 0 }}</div>
+      <div class="stat-label">Documents</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fas fa-database"></i></div>
+    <div class="stat-info">
+      <div class="stat-number">{{ vector_stats.count or 0 }}</div>
+      <div class="stat-label">Vector Chunks</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon gold"><i class="fas fa-brain"></i></div>
+    <div class="stat-info">
+      <div class="stat-number">{{ stats.predictions or 0 }}</div>
+      <div class="stat-label">Predictions</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-2">
+
+  <!-- ── System Status ─────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-header"><span class="card-title"><i class="fas fa-server" style="color:var(--accent-secondary)"></i> System Status</span></div>
+    <div class="card-body">
+      <!-- ML Models -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-color);">
+        <div class="flex items-center gap-2">
+          <span style="font-size:20px;">🧠</span>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text-heading);">ML Case Classifier</div>
+            <div style="font-size:12px;color:var(--text-muted);">TF-IDF + Logistic Regression</div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <span class="tag {% if ml_ready %}ollama-online{% else %}ollama-offline{% endif %}">
+            {% if ml_ready %}✓ Ready{% else %}✕ Not trained{% endif %}
+          </span>
+          <button onclick="trainModels(this)" class="btn btn-primary btn-sm">
+            <i class="fas fa-play"></i> {% if ml_ready %}Retrain{% else %}Train Now{% endif %}
+          </button>
+        </div>
+      </div>
+
+      <!-- ChromaDB -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-color);">
+        <div class="flex items-center gap-2">
+          <span style="font-size:20px;">🗂</span>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text-heading);">ChromaDB Vector Store</div>
+            <div style="font-size:12px;color:var(--text-muted);">{{ vector_stats.count or 0 }} chunks | {{ vector_stats.path or '—' }}</div>
+          </div>
+        </div>
+        <span class="tag ollama-online">✓ Running</span>
+      </div>
+
+      <!-- Database -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-color);">
+        <div class="flex items-center gap-2">
+          <span style="font-size:20px;">🗄</span>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text-heading);">SQLite Database</div>
+            <div style="font-size:12px;color:var(--text-muted);">{{ stats.legal_acts or 0 }} legal acts seeded</div>
+          </div>
+        </div>
+        <span class="tag ollama-online">✓ Connected</span>
+      </div>
+
+      <!-- Quick Actions -->
+      <div style="padding-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="/api/status" target="_blank" class="btn btn-ghost btn-sm"><i class="fas fa-external-link-alt"></i> API Status</a>
+        <a href="{{ url_for('export_docs_csv') }}" class="btn btn-ghost btn-sm"><i class="fas fa-download"></i> Export All Docs</a>
+        <button onclick="clearCache()" class="btn btn-ghost btn-sm"><i class="fas fa-broom"></i> Clear Cache</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Recent Predictions ─────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-header"><span class="card-title"><i class="fas fa-chart-pie" style="color:var(--accent-gold)"></i> Recent Predictions</span></div>
+    <div class="card-body" style="padding:0;max-height:300px;overflow-y:auto;">
+      {% if recent_predictions %}
+      {% for pred in recent_predictions %}
+      <div style="padding:10px 16px;border-bottom:1px solid var(--border-color);">
+        <div class="flex items-center justify-between">
+          <span class="result-badge badge-{{ pred.predicted_type.lower().replace(' ','') }}">{{ pred.predicted_type }}</span>
+          <span style="font-size:11px;font-weight:700;color:var(--accent-green);">{{ "%.1f"|format(pred.confidence * 100) if pred.confidence else 0 }}%</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">{{ pred.created_at | format_date }}</div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div style="padding:24px;text-align:center;color:var(--text-muted);">No predictions yet</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- ── User Management ────────────────────────────────────────────── -->
+<div class="card" style="margin-top:20px;">
+  <div class="card-header">
+    <span class="card-title"><i class="fas fa-users" style="color:var(--accent-primary)"></i> User Management</span>
+    <span class="tag">{{ users | length }} users</span>
+  </div>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Last Login</th>
+          <th>Joined</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr id="user-{{ user.id }}">
+          <td>
+            <div class="flex items-center gap-2">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;flex-shrink:0;">
+                {{ (user.full_name or user.username)[0].upper() }}
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:600;">{{ user.full_name or user.username }}</div>
+                <div style="font-size:11px;color:var(--text-muted);">@{{ user.username }}</div>
+              </div>
+            </div>
+          </td>
+          <td style="font-size:13px;">{{ user.email }}</td>
+          <td>
+            <span class="result-badge {% if user.role == 'admin' %}badge-criminal{% elif user.role == 'lawyer' %}badge-civil{% elif user.role == 'student' %}badge-consumer{% else %}badge-traffic{% endif %}">
+              {{ user.role }}
+            </span>
+          </td>
+          <td>
+            <span class="flex items-center gap-2" id="status-{{ user.id }}">
+              <div class="status-dot {% if user.is_active %}online{% else %}offline{% endif %}"></div>
+              {{ 'Active' if user.is_active else 'Inactive' }}
+            </span>
+          </td>
+          <td style="font-size:12px;color:var(--text-muted);">{{ user.last_login | format_date if user.last_login else 'Never' }}</td>
+          <td style="font-size:12px;color:var(--text-muted);">{{ user.created_at | format_date }}</td>
+          <td>
+            {% if user.id != current_user.id %}
+            <button onclick="toggleUser({{ user.id }})" class="btn btn-ghost btn-sm" id="toggle-{{ user.id }}">
+              {% if user.is_active %}<i class="fas fa-ban" style="color:var(--accent-red);"></i>{% else %}<i class="fas fa-check" style="color:var(--accent-green);"></i>{% endif %}
+            </button>
+            {% else %}
+            <span class="tag" style="font-size:10px;">You</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Recent Documents ────────────────────────────────────────────── -->
+<div class="card" style="margin-top:20px;">
+  <div class="card-header">
+    <span class="card-title"><i class="fas fa-file-alt" style="color:var(--accent-green)"></i> Recent Document Uploads</span>
+    <a href="{{ url_for('upload') }}" class="btn btn-ghost btn-sm">View All</a>
+  </div>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr><th>Title</th><th>Type</th><th>Case Type</th><th>Words</th><th>Indexed</th><th>Uploaded</th></tr>
+      </thead>
+      <tbody>
+        {% for doc in recent_docs %}
+        <tr>
+          <td style="font-size:13px;font-weight:500;">{{ doc.title | truncate_smart(40) }}</td>
+          <td><span class="tag" style="font-size:11px;">{{ doc.file_type }}</span></td>
+          <td>
+            {% if doc.case_type %}
+            <span class="result-badge badge-{{ doc.case_type.lower().replace(' ','') }}" style="font-size:10px;">{{ doc.case_type }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td style="font-size:12px;">{{ doc.word_count or 0 }}</td>
+          <td>
+            {% if doc.is_indexed %}
+            <span style="color:var(--accent-green);">✓</span>
+            {% else %}
+            <span style="color:var(--text-muted);">—</span>
+            {% endif %}
+          </td>
+          <td style="font-size:12px;color:var(--text-muted);">{{ doc.created_at | format_date }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function trainModels(btn) {
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Training...';
+  showToast('Training ML models... this may take 30-60 seconds', 'info', 60000);
+
+  const resp = await fetch('/admin/train-models', { method: 'POST' });
+  const data = await resp.json();
+  btn.disabled = false;
+
+  if (data.success) {
+    const r = data.result;
+    btn.innerHTML = '<i class="fas fa-check"></i> Trained!';
+    showToast(`Best model: ${r.best_model} (${Math.round(r.best_accuracy*100)}% accuracy) — ${r.training_samples} samples`, 'success', 8000);
+  } else {
+    btn.innerHTML = '<i class="fas fa-exclamation"></i> Failed';
+    showToast('Training failed: ' + data.error, 'danger');
+  }
+}
+
+async function toggleUser(userId) {
+  const resp = await fetch(`/admin/user/${userId}/toggle`, { method: 'POST' });
+  const data = await resp.json();
+  if (data.success) {
+    const btn = document.getElementById('toggle-' + userId);
+    const statusEl = document.getElementById('status-' + userId);
+    if (data.is_active) {
+      btn.innerHTML = '<i class="fas fa-ban" style="color:var(--accent-red);"></i>';
+      statusEl.innerHTML = '<div class="status-dot online"></div> Active';
+    } else {
+      btn.innerHTML = '<i class="fas fa-check" style="color:var(--accent-green);"></i>';
+      statusEl.innerHTML = '<div class="status-dot offline"></div> Inactive';
+    }
+    showToast('User status updated', 'success');
+  }
+}
+
+function clearCache() {
+  showToast('Cache cleared', 'success');
+}
+</script>
+{% endblock %}

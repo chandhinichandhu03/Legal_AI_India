@@ -1,0 +1,408 @@
+{% extends "base.html" %}
+{% block title %}Search Cases — ⚖ LegalAI India{% endblock %}
+{% block page_title %}Legal Search Engine{% endblock %}
+{% block page_subtitle %}Search by IPC section, judge, case type, keyword, date{% endblock %}
+
+{% block content %}
+<!-- ── Search Filters ──────────────────────────────────────────────── -->
+<div class="search-filters" style="margin-bottom:20px;">
+  <form method="GET" action="{{ url_for('search') }}" id="searchForm">
+
+    <!-- Main search bar -->
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <div style="flex:1;position:relative;">
+        <i class="fas fa-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);"></i>
+        <input type="text" name="q" value="{{ query }}" class="form-control" style="padding-left:42px;font-size:16px;height:48px;"
+               placeholder="Search by keywords, case description, party name..."
+               id="mainSearch" autocomplete="off">
+        <div id="suggestions" style="position:absolute;top:100%;left:0;right:0;z-index:50;background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);display:none;max-height:200px;overflow-y:auto;"></div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="height:48px;padding:0 24px;">
+        <i class="fas fa-search"></i> Search
+      </button>
+      <button type="button" onclick="clearFilters()" class="btn btn-ghost" style="height:48px;">
+        <i class="fas fa-times"></i> Clear
+      </button>
+    </div>
+
+    <!-- Filter grid -->
+    <div class="filter-grid">
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">⚖ IPC / BNS Section</label>
+        <input type="text" name="ipc" value="{{ filters.ipc }}" class="form-control" placeholder="e.g. 302, 420, 376">
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">👨‍⚖️ Judge Name</label>
+        <input type="text" name="judge" value="{{ filters.judge }}" class="form-control" placeholder="e.g. Justice Sharma">
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">📂 Case Type</label>
+        <select name="case_type" class="form-control">
+          <option value="">All Types</option>
+          {% for cat in case_categories %}
+          <option value="{{ cat }}" {% if filters.case_type == cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">⚖ Act Name</label>
+        <input type="text" name="act" value="{{ filters.act }}" class="form-control" placeholder="e.g. POCSO, RERA, DV Act">
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">👥 Party Name</label>
+        <input type="text" name="party" value="{{ filters.party }}" class="form-control" placeholder="Petitioner or Respondent">
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">🏛 Court</label>
+        <input type="text" name="court" value="{{ filters.court }}" class="form-control" placeholder="e.g. Supreme Court, High Court">
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">📅 From Date</label>
+        <input type="date" name="date_from" value="{{ filters.date_from }}" class="form-control">
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">📅 To Date</label>
+        <input type="date" name="date_to" value="{{ filters.date_to }}" class="form-control">
+      </div>
+    </div>
+
+    <div class="flex gap-2" style="margin-top:12px;">
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">Search Mode</label>
+        <select name="mode" class="form-control" style="width:auto;">
+          <option value="standard" {% if filters.mode == 'standard' %}selected{% endif %}>Standard</option>
+          <option value="boolean" {% if filters.mode == 'boolean' %}selected{% endif %}>Boolean (AND/OR/NOT)</option>
+          <option value="ipc" {% if filters.mode == 'ipc' %}selected{% endif %}>IPC Section Lookup</option>
+          <option value="fulltext" {% if filters.mode == 'fulltext' %}selected{% endif %}>Full Text</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">Sort By</label>
+        <select name="sort" class="form-control" style="width:auto;">
+          <option value="relevance" {% if filters.sort == 'relevance' %}selected{% endif %}>Relevance</option>
+          <option value="date_desc" {% if filters.sort == 'date_desc' %}selected{% endif %}>Newest First</option>
+          <option value="date_asc" {% if filters.sort == 'date_asc' %}selected{% endif %}>Oldest First</option>
+          <option value="title" {% if filters.sort == 'title' %}selected{% endif %}>Title A-Z</option>
+        </select>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- ── IPC Quick Reference ─────────────────────────────────────────── -->
+{% if ipc_quick %}
+<div class="card" style="margin-bottom:20px;border-color:rgba(239,68,68,0.3);">
+  <div class="card-header">
+    <span class="card-title" style="color:var(--accent-red);">⚖ IPC Section Quick Reference</span>
+  </div>
+  <div class="card-body" style="padding:0;">
+    {% for ipc in ipc_quick %}
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border-color);">
+      <div class="flex items-center gap-2" style="margin-bottom:6px;">
+        <span class="result-badge badge-criminal">{{ ipc.act_name }} § {{ ipc.section_number }}</span>
+        <span style="font-weight:600;color:var(--text-heading);">{{ ipc.section_title }}</span>
+        {% if ipc.bailable is not none %}
+        <span class="tag" style="{% if ipc.bailable %}border-color:rgba(0,230,118,0.4);color:var(--accent-green);{% else %}border-color:rgba(255,82,82,0.4);color:var(--accent-red);{% endif %}">
+          {% if ipc.bailable %}Bailable{% else %}Non-Bailable{% endif %}
+        </span>
+        {% endif %}
+        {% if ipc.cognizable is not none %}
+        <span class="tag">{% if ipc.cognizable %}Cognizable{% else %}Non-Cognizable{% endif %}</span>
+        {% endif %}
+      </div>
+      <div style="font-size:13px;color:var(--text-secondary);">{{ ipc.section_content | truncate_smart(200) }}</div>
+      {% if ipc.punishment %}
+      <div style="font-size:12px;color:var(--accent-orange);margin-top:6px;"><i class="fas fa-gavel"></i> {{ ipc.punishment }}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- ── IPC Mode Results ────────────────────────────────────────────── -->
+{% if ipc_results %}
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-header">
+    <span class="card-title">IPC Section Results — {{ ipc_results | length }} found</span>
+  </div>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Section</th>
+          <th>Title</th>
+          <th>Description</th>
+          <th>Punishment</th>
+          <th>Bailable</th>
+          <th>Cognizable</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ipc in ipc_results %}
+        <tr>
+          <td><code>{{ ipc.section_number }}</code></td>
+          <td><strong>{{ ipc.section_title }}</strong></td>
+          <td style="max-width:300px;font-size:12px;">{{ ipc.section_content | truncate_smart(120) }}</td>
+          <td style="font-size:12px;color:var(--accent-orange);">{{ ipc.punishment or '—' }}</td>
+          <td>
+            {% if ipc.bailable is not none %}
+            <span style="color:{% if ipc.bailable %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+              {% if ipc.bailable %}✓ Yes{% else %}✕ No{% endif %}
+            </span>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if ipc.cognizable is not none %}
+            <span>{% if ipc.cognizable %}Yes{% else %}No{% endif %}</span>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Results Header ─────────────────────────────────────────────── -->
+{% if query or filters.ipc or filters.judge or filters.case_type %}
+<div class="flex items-center justify-between" style="margin-bottom:16px;">
+  <div>
+    <span style="font-size:16px;font-weight:700;color:var(--text-heading);">
+      {{ total }} result{% if total != 1 %}s{% endif %}
+    </span>
+    {% if query %}
+    <span style="font-size:13px;color:var(--text-muted);margin-left:8px;">for "<strong>{{ query }}</strong>"</span>
+    {% endif %}
+  </div>
+  <div class="flex gap-2">
+    <button onclick="window.location='/api/similarity'" class="btn btn-ghost btn-sm">
+      <i class="fas fa-balance-scale"></i> Similarity Check
+    </button>
+    <a href="{{ url_for('export_docs_csv') }}" class="btn btn-ghost btn-sm">
+      <i class="fas fa-download"></i> Export CSV
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Document Results ───────────────────────────────────────────── -->
+{% if results %}
+<div style="display:flex;flex-direction:column;gap:12px;">
+  {% for doc in results %}
+  <div class="result-card" onclick="window.location='/document/{{ doc.id }}'">
+    <div class="flex items-center justify-between" style="margin-bottom:8px;">
+      <div class="flex items-center gap-2">
+        <span style="font-size:20px;">
+          {% if doc.file_type == 'pdf' %}📄{% elif doc.file_type == 'docx' %}📝{% else %}📋{% endif %}
+        </span>
+        <span class="result-title">{{ doc.title }}</span>
+      </div>
+      {% if doc.relevance_score %}
+      <span class="relevance-score">{{ "%.0f"|format(doc.relevance_score * 100) }}% match</span>
+      {% endif %}
+    </div>
+
+    <div class="result-meta">
+      {% if doc.case_type %}
+      <span class="result-badge badge-{{ doc.case_type.lower().replace(' ','') }}">{{ doc.case_type }}</span>
+      {% endif %}
+      {% if doc.ipc_sections %}
+      {% for sec in doc.ipc_sections[:3] %}
+      <span class="result-badge" style="background:rgba(239,68,68,0.15);color:#ef4444;">§{{ sec }}</span>
+      {% endfor %}
+      {% endif %}
+      <span style="font-size:11px;color:var(--text-muted);">{{ doc.word_count or 0 }} words</span>
+      <span style="font-size:11px;color:var(--text-muted);">{{ doc.created_at | format_date }}</span>
+    </div>
+
+    {% if doc.summary %}
+    <div style="font-size:13px;color:var(--text-secondary);margin-top:8px;line-height:1.6;">
+      {{ doc.summary | truncate_smart(200) }}
+    </div>
+    {% endif %}
+
+    {% if doc.judges %}
+    <div class="flex gap-2" style="margin-top:8px;">
+      {% for judge in doc.judges[:2] %}
+      <span class="tag" style="font-size:11px;"><i class="fas fa-user-tie"></i> {{ judge }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="flex gap-2" style="margin-top:12px;" onclick="event.stopPropagation()">
+      <button onclick="window.location='/chat?doc={{ doc.id }}'" class="btn btn-primary btn-sm">
+        <i class="fas fa-comments"></i> Chat
+      </button>
+      <button onclick="fetchSummary({{ doc.id }}, this)" class="btn btn-ghost btn-sm">
+        <i class="fas fa-compress-alt"></i> Summary
+      </button>
+      <button onclick="showSimilarity({{ doc.id }}, '{{ doc.title }}')" class="btn btn-ghost btn-sm">
+        <i class="fas fa-copy"></i> Similar
+      </button>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<div class="pagination">
+  {% if page > 1 %}
+  <a href="?{{ request.query_string.decode() | replace('page='+page|string, 'page='+(page-1)|string) }}" class="page-btn">‹</a>
+  {% else %}
+  <span class="page-btn disabled">‹</span>
+  {% endif %}
+
+  {% for p in range(1, total_pages + 1) %}
+  {% if p == page %}
+  <span class="page-btn active">{{ p }}</span>
+  {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+  <a href="{{ url_for('search', q=query, ipc=filters.ipc, judge=filters.judge, case_type=filters.case_type, page=p) }}" class="page-btn">{{ p }}</a>
+  {% elif p == page - 3 or p == page + 3 %}
+  <span class="page-btn disabled">…</span>
+  {% endif %}
+  {% endfor %}
+
+  {% if page < total_pages %}
+  <a href="?{{ request.query_string.decode() | replace('page='+page|string, 'page='+(page+1)|string) }}" class="page-btn">›</a>
+  {% else %}
+  <span class="page-btn disabled">›</span>
+  {% endif %}
+</div>
+{% endif %}
+
+{% elif query or filters.ipc or filters.judge or filters.case_type %}
+<div class="card" style="text-align:center;padding:48px;">
+  <div style="font-size:48px;margin-bottom:12px;">🔍</div>
+  <div style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--text-heading);">No results found</div>
+  <div style="color:var(--text-muted);">Try different keywords or broaden your filters</div>
+  <div class="flex gap-2" style="justify-content:center;margin-top:16px;">
+    <a href="{{ url_for('upload') }}" class="btn btn-primary btn-sm">Upload Documents</a>
+    <button onclick="clearFilters()" class="btn btn-ghost btn-sm">Clear Filters</button>
+  </div>
+</div>
+{% else %}
+<!-- Default: Show popular searches and instructions -->
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-header"><span class="card-title">🔥 Popular IPC Sections</span></div>
+    <div class="card-body" style="padding:0;">
+      {% for sec in [('302','Murder','Criminal'),('376','Rape','Criminal'),('420','Cheating','Criminal'),('498A','Dowry Cruelty','Family'),('307','Attempt to Murder','Criminal'),('379','Theft','Criminal'),('354','Assault on Woman','Criminal'),('66','IT Act Cybercrime','Cyber Crime')] %}
+      <a href="{{ url_for('search', ipc=sec[0], mode='ipc') }}" style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border-color);text-decoration:none;transition:var(--transition);" onmouseover="this.style.background='var(--bg-card-hover)'" onmouseout="this.style.background=''">
+        <code style="min-width:40px;">§{{ sec[0] }}</code>
+        <span style="flex:1;font-size:13px;color:var(--text-primary);">{{ sec[1] }}</span>
+        <span class="result-badge badge-{{ sec[2].lower().replace(' ','') }}" style="font-size:10px;">{{ sec[2] }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">💡 Search Tips</span></div>
+    <div class="card-body">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        {% for tip in [
+          ('⚖ IPC Lookup', 'Switch to "IPC Section Lookup" mode to see full section details with punishment.'),
+          ('🔤 Boolean Search', 'Use AND, OR, NOT operators: "murder AND IPC NOT bail"'),
+          ('👨‍⚖️ Judge Search', 'Enter judge name in the Judge field to find all cases by that judge.'),
+          ('📅 Date Range', 'Filter documents uploaded within a specific date range.'),
+          ('📂 Case Type', 'Narrow results by Criminal, Civil, Family, Cyber Crime, etc.'),
+          ('💬 Chat About Results', 'Click "Chat" on any result to ask AI about that document.'),
+        ] %}
+        <div style="display:flex;gap:10px;">
+          <span style="font-size:18px;flex-shrink:0;">{{ tip[0].split()[0] }}</span>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-heading);">{{ tip[0][2:] }}</div>
+            <div style="font-size:12px;color:var(--text-secondary);">{{ tip[1] }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Summary Modal -->
+<div class="modal-overlay" id="summaryModal">
+  <div class="modal">
+    <div class="flex items-center justify-between" style="margin-bottom:16px;">
+      <h3 class="card-title">📝 Document Summary</h3>
+      <button onclick="document.getElementById('summaryModal').classList.remove('active')" class="btn btn-ghost btn-icon">✕</button>
+    </div>
+    <div id="summaryContent" style="color:var(--text-secondary);font-size:14px;line-height:1.8;"></div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Search autocomplete
+let searchTimeout;
+document.getElementById('mainSearch')?.addEventListener('input', function() {
+  clearTimeout(searchTimeout);
+  const v = this.value.trim();
+  if (v.length < 2) { hideSuggestions(); return; }
+  searchTimeout = setTimeout(() => fetchSuggestions(v), 300);
+});
+
+async function fetchSuggestions(q) {
+  const resp = await fetch(`/api/search/suggestions?q=${encodeURIComponent(q)}`);
+  const data = await resp.json();
+  const box = document.getElementById('suggestions');
+  if (!data.suggestions || !data.suggestions.length) { hideSuggestions(); return; }
+  box.innerHTML = data.suggestions.map(s =>
+    `<div style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border-color);" onmousedown="selectSuggestion('${s.replace(/'/g,"\\'")}')">
+      <i class="fas fa-history" style="color:var(--text-muted);margin-right:8px;"></i>${s}
+    </div>`
+  ).join('');
+  box.style.display = 'block';
+}
+
+function selectSuggestion(text) {
+  document.getElementById('mainSearch').value = text;
+  hideSuggestions();
+  document.getElementById('searchForm').submit();
+}
+
+function hideSuggestions() { document.getElementById('suggestions').style.display = 'none'; }
+document.addEventListener('click', e => { if (!e.target.closest('.topbar-search') && !e.target.closest('#mainSearch')) hideSuggestions(); });
+
+function clearFilters() {
+  window.location = '{{ url_for("search") }}';
+}
+
+async function fetchSummary(docId, btn) {
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  const resp = await fetch('/summary', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ doc_id: docId })
+  });
+  const data = await resp.json();
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-compress-alt"></i> Summary';
+  if (data.success) {
+    document.getElementById('summaryContent').innerHTML =
+      `<strong>AI Summary:</strong><br>${data.ai_summary || 'Not available'}<br><br>` +
+      `<strong>Extractive Summary:</strong><br>${data.extractive_summary || ''}`;
+    document.getElementById('summaryModal').classList.add('active');
+  } else {
+    showToast('Summary failed: ' + data.error, 'danger');
+  }
+}
+
+function showSimilarity(docId, title) {
+  showToast(`Finding similar cases to "${title.substring(0,30)}..."`, 'info');
+  window.location = `{{ url_for('search') }}?q=${encodeURIComponent(title)}&sort=relevance`;
+}
+
+document.getElementById('summaryModal')?.addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('active');
+});
+</script>
+{% endblock %}

@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — ⚖ LegalAI India{% endblock %}
+{% block meta_description %}AI Legal Assistant Dashboard — Indian Law RAG System{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Overview of your legal documents and AI activity{% endblock %}
+
+{% block content %}
+<!-- ── Stat Cards ──────────────────────────────────────────────────────── -->
+<div class="grid grid-4" style="margin-bottom:24px;">
+  <div class="stat-card fade-in-up">
+    <div class="stat-icon blue"><i class="fas fa-file-alt"></i></div>
+    <div class="stat-info">
+      <div class="stat-number">{{ stats.documents or 0 }}</div>
+      <div class="stat-label">Documents Uploaded</div>
+      <div class="stat-trend">↑ Indexed in ChromaDB</div>
+    </div>
+  </div>
+  <div class="stat-card fade-in-up" style="animation-delay:.1s">
+    <div class="stat-icon purple"><i class="fas fa-comments"></i></div>
+    <div class="stat-info">
+      <div class="stat-number">{{ stats.chats or 0 }}</div>
+      <div class="stat-label">AI Chat Sessions</div>
+      <div class="stat-trend">↑ RAG-powered answers</div>
+    </div>
+  </div>
+  <div class="stat-card fade-in-up" style="animation-delay:.2s">
+    <div class="stat-icon green"><i class="fas fa-brain"></i></div>
+    <div class="stat-info">
+      <div class="stat-number">{{ stats.predictions or 0 }}</div>
+      <div class="stat-label">Case Predictions</div>
+      <div class="stat-trend">↑ ML classifier</div>
+    </div>
+  </div>
+  <div class="stat-card fade-in-up" style="animation-delay:.3s">
+    <div class="stat-icon gold"><i class="fas fa-search"></i></div>
+    <div class="stat-info">
+      <div class="stat-number">{{ stats.searches or 0 }}</div>
+      <div class="stat-label">Searches Made</div>
+      <div class="stat-trend">↑ Advanced search</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Ollama Status Banner ───────────────────────────────────────────── -->
+<div class="card" style="margin-bottom:24px;border-color:{% if ollama_status.online %}rgba(0,230,118,0.3){% else %}rgba(255,82,82,0.3){% endif %}">
+  <div class="card-body" style="padding:16px 24px;">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="status-dot {% if ollama_status.online %}online{% else %}offline{% endif %}"></div>
+        <span class="font-bold" style="color:{% if ollama_status.online %}var(--accent-green){% else %}var(--accent-red){% endif %}">
+          Ollama AI Engine — {% if ollama_status.online %}Online{% else %}Offline{% endif %}
+        </span>
+        {% if ollama_status.online %}
+        <span class="tag">{{ ollama_status.models | length }} models available</span>
+        {% for m in ollama_status.models[:3] %}
+        <span class="tag" style="border-color:var(--accent-primary);color:var(--accent-primary);">{{ m }}</span>
+        {% endfor %}
+        {% else %}
+        <span style="color:var(--text-muted);font-size:13px;">Start Ollama: <code>ollama serve</code> then <code>ollama pull llama3</code></span>
+        {% endif %}
+      </div>
+      <div class="flex gap-2">
+        <a href="{{ url_for('upload') }}" class="btn btn-primary btn-sm"><i class="fas fa-upload"></i> Upload</a>
+        <a href="{{ url_for('chat') }}" class="btn btn-secondary btn-sm"><i class="fas fa-comments"></i> Chat</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main Grid ──────────────────────────────────────────────────────── -->
+<div class="grid grid-2" style="margin-bottom:24px;">
+
+  <!-- Case Distribution Chart -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-chart-pie" style="color:var(--accent-primary)"></i> Case Type Distribution</span>
+      <span class="tag">{{ stats.documents or 0 }} docs</span>
+    </div>
+    <div class="card-body" style="height:280px;position:relative;display:flex;align-items:center;justify-content:center;">
+      {% if case_distribution %}
+      <div style="position:relative;height:240px;width:100%;">
+        <canvas id="caseChart"></canvas>
+      </div>
+      {% else %}
+      <div style="text-align:center;color:var(--text-muted)">
+        <div style="font-size:48px;margin-bottom:12px;">📊</div>
+        <div>Upload documents to see distribution</div>
+        <a href="{{ url_for('upload') }}" class="btn btn-primary btn-sm" style="margin-top:12px;">
+          <i class="fas fa-upload"></i> Upload Now
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Monthly Activity -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-chart-bar" style="color:var(--accent-secondary)"></i> Monthly Activity</span>
+    </div>
+    <div class="card-body" style="height:280px;position:relative;display:flex;align-items:center;justify-content:center;">
+      <div style="position:relative;height:240px;width:100%;">
+        <canvas id="activityChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-2" style="margin-bottom:24px;">
+
+  <!-- Recent Documents -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-file-alt" style="color:var(--accent-gold)"></i> Recent Documents</span>
+      <a href="{{ url_for('upload') }}" class="btn btn-ghost btn-sm">View All</a>
+    </div>
+    <div class="card-body" style="padding:12px 0;">
+      {% if recent_docs %}
+      {% for doc in recent_docs %}
+      <div class="flex items-center gap-2" style="padding:10px 20px;border-bottom:1px solid var(--border-color);transition:var(--transition);" onmouseover="this.style.background='var(--bg-card-hover)'" onmouseout="this.style.background=''">
+        <div style="width:36px;height:36px;border-radius:8px;background:rgba(108,99,255,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">
+          {% if doc.file_type == 'pdf' %}📄{% elif doc.file_type == 'docx' %}📝{% else %}📋{% endif %}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;color:var(--text-heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ doc.title }}</div>
+          <div style="font-size:11px;color:var(--text-muted);">{{ doc.created_at | format_date }}</div>
+        </div>
+        {% if doc.case_type %}
+        <span class="result-badge badge-{{ doc.case_type.lower().replace(' ', '') }}" style="font-size:10px;padding:2px 6px;">{{ doc.case_type }}</span>
+        {% endif %}
+        {% if doc.is_indexed %}
+        <span style="color:var(--accent-green);font-size:12px;" title="Indexed in ChromaDB">✓</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% else %}
+      <div style="text-align:center;padding:32px;color:var(--text-muted);">
+        <div style="font-size:36px;margin-bottom:8px;">📭</div>
+        <div>No documents yet</div>
+        <a href="{{ url_for('upload') }}" class="btn btn-primary btn-sm" style="margin-top:12px;">
+          Upload First Document
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Recent Chats -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-comments" style="color:var(--accent-green)"></i> Recent AI Chats</span>
+      <a href="{{ url_for('history') }}" class="btn btn-ghost btn-sm">View All</a>
+    </div>
+    <div class="card-body" style="padding:12px 0;">
+      {% if recent_chats %}
+      {% for chat in recent_chats %}
+      <div style="padding:12px 20px;border-bottom:1px solid var(--border-color);">
+        <div style="font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:4px;">
+          <i class="fas fa-question-circle" style="color:var(--accent-primary);margin-right:6px;"></i>
+          {{ chat.question | truncate_smart(80) }}
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);">{{ chat.created_at | format_date }}</div>
+        <div class="flex gap-2" style="margin-top:4px;">
+          {% if chat.confidence_score %}
+          <span class="confidence-badge {% if chat.confidence_score > 0.7 %}confidence-high{% elif chat.confidence_score > 0.4 %}confidence-medium{% else %}confidence-low{% endif %}">
+            {{ "%.0f"|format(chat.confidence_score * 100) }}% confidence
+          </span>
+          {% endif %}
+          {% if chat.model_used %}
+          <span class="tag" style="font-size:10px;">{{ chat.model_used }}</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div style="text-align:center;padding:32px;color:var(--text-muted);">
+        <div style="font-size:36px;margin-bottom:8px;">💬</div>
+        <div>No chats yet</div>
+        <a href="{{ url_for('chat') }}" class="btn btn-primary btn-sm" style="margin-top:12px;">
+          Start AI Chat
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- ── Quick Actions ──────────────────────────────────────────────────── -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title"><i class="fas fa-bolt" style="color:var(--accent-gold)"></i> Quick Actions</span>
+  </div>
+  <div class="card-body">
+    <div class="grid grid-4">
+      <a href="{{ url_for('upload') }}" class="card" style="text-align:center;padding:24px;text-decoration:none;border-color:rgba(108,99,255,0.3);">
+        <div style="font-size:32px;margin-bottom:8px;">📤</div>
+        <div style="font-weight:700;color:var(--text-heading);">Upload Document</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">PDF, DOCX, TXT, Image</div>
+      </a>
+      <a href="{{ url_for('chat') }}" class="card" style="text-align:center;padding:24px;text-decoration:none;border-color:rgba(0,212,255,0.3);">
+        <div style="font-size:32px;margin-bottom:8px;">🤖</div>
+        <div style="font-weight:700;color:var(--text-heading);">Ask Legal Question</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">RAG-powered AI chat</div>
+      </a>
+      <a href="{{ url_for('predict') }}" class="card" style="text-align:center;padding:24px;text-decoration:none;border-color:rgba(0,230,118,0.3);">
+        <div style="font-size:32px;margin-bottom:8px;">🎯</div>
+        <div style="font-weight:700;color:var(--text-heading);">Predict Case Type</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">ML classification</div>
+      </a>
+      <a href="{{ url_for('search') }}" class="card" style="text-align:center;padding:24px;text-decoration:none;border-color:rgba(255,215,0,0.3);">
+        <div style="font-size:32px;margin-bottom:8px;">🔍</div>
+        <div style="font-weight:700;color:var(--text-heading);">Search Cases</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">IPC, judge, keyword</div>
+      </a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ── Case Distribution Pie Chart ───────────────────────────────────────
+const caseData = {{ case_distribution | tojson }};
+const monthlyData = {{ monthly_data | tojson }};
+
+if (Object.keys(caseData).length > 0 && document.getElementById('caseChart')) {
+  const colors = {
+    'Criminal': '#ef4444', 'Civil': '#3b82f6', 'Family': '#ec4899',
+    'Cyber Crime': '#8b5cf6', 'Property': '#f59e0b', 'Labour': '#10b981',
+    'Consumer': '#06b6d4', 'Traffic': '#f97316', 'General / Non-Legal': '#64748b', 'Unknown': '#6b7280'
+  };
+
+  new Chart(document.getElementById('caseChart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(caseData),
+      datasets: [{
+        data: Object.values(caseData),
+        backgroundColor: Object.keys(caseData).map(k => colors[k] || '#6c63ff'),
+        borderWidth: 2,
+        borderColor: 'var(--bg-card)',
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { color: '#8892b0', font: { size: 11 }, padding: 12, usePointStyle: true }
+        }
+      }
+    }
+  });
+}
+
+// ── Monthly Activity Bar Chart ────────────────────────────────────────
+if (document.getElementById('activityChart')) {
+  new Chart(document.getElementById('activityChart'), {
+    type: 'bar',
+    data: {
+      labels: monthlyData.map(d => d.month),
+      datasets: [{
+        label: 'Documents',
+        data: monthlyData.map(d => d.count),
+        backgroundColor: 'rgba(108,99,255,0.6)',
+        borderColor: '#6c63ff',
+        borderWidth: 2,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#8892b0', font: { size: 11 } },
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: '#8892b0', font: { size: 11 } },
+        }
+      }
+    }
+  });
+}
+</script>
+{% endblock %}

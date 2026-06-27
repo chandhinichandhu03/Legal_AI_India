@@ -1,0 +1,265 @@
+2026-06-24 22:21:57,612 [INFO] legal_assistant:74 - Admin user created: admin@legalai.in
+2026-06-24 22:21:57,619 [INFO] legal_assistant:105 - Seeded 93 IPC sections into legal_acts table.
+2026-06-24 22:21:57,619 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:21:57,623 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:21:57,623 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:21:57,623 [INFO] legal_assistant:996 -    Host: 0.0.0.0:5000
+2026-06-24 22:21:57,623 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:21:57,623 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:22:01,508 [INFO] legal_assistant:1004 - Training ML models for first time...
+2026-06-24 22:22:01,509 [INFO] legal_assistant:159 - Starting ML model training...
+2026-06-24 22:22:01,511 [INFO] legal_assistant:150 - Loaded 100 additional training samples from CSV.
+2026-06-24 22:22:01,521 [WARNING] legal_assistant:1007 - ML pre-training skipped: LogisticRegression.__init__() got an unexpected keyword argument 'multi_class'
+2026-06-24 22:22:33,533 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:22:33,538 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:22:33,538 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:22:33,538 [INFO] legal_assistant:996 -    Host: 0.0.0.0:5001
+2026-06-24 22:22:33,538 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:22:33,538 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:22:34,713 [INFO] legal_assistant:1004 - Training ML models for first time...
+2026-06-24 22:22:34,713 [INFO] legal_assistant:159 - Starting ML model training...
+2026-06-24 22:22:34,715 [INFO] legal_assistant:150 - Loaded 100 additional training samples from CSV.
+2026-06-24 22:22:35,009 [INFO] legal_assistant:221 - Logistic Regression: acc=0.3514, cv=0.4330±0.1076
+2026-06-24 22:22:36,015 [INFO] legal_assistant:221 - Random Forest: acc=0.4324, cv=0.5706±0.1171
+2026-06-24 22:22:36,030 [INFO] legal_assistant:221 - Naive Bayes: acc=0.3514, cv=0.3836±0.0820
+2026-06-24 22:22:36,096 [INFO] legal_assistant:238 - Best model: Random Forest (accuracy=0.4324)
+2026-06-24 22:22:36,097 [INFO] legal_assistant:239 - Models saved to /Users/ashokkumar/Downloads/Legal_Assistant_for_Indian_Law/models
+2026-06-24 22:22:59,147 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:22:59,151 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:22:59,151 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:22:59,151 [INFO] legal_assistant:996 -    Host: 0.0.0.0:5050
+2026-06-24 22:22:59,151 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:22:59,151 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:23:00,460 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:23:00,465 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:23:00,465 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:23:00,465 [INFO] legal_assistant:996 -    Host: 0.0.0.0:5050
+2026-06-24 22:23:00,465 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:23:00,465 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:28:33,339 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:28:33,343 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:28:33,343 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:28:33,343 [INFO] legal_assistant:996 -    Host: 0.0.0.0:5050
+2026-06-24 22:28:33,343 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:28:33,343 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:29:27,016 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:29:27,020 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:29:27,020 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:29:27,020 [INFO] legal_assistant:996 -    Host: 0.0.0.0:5050
+2026-06-24 22:29:27,020 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:29:27,020 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:29:28,334 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:29:28,338 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:29:28,338 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:29:28,338 [INFO] legal_assistant:996 -    Host: 0.0.0.0:5050
+2026-06-24 22:29:28,338 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:29:28,338 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:35:37,769 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:35:37,773 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:35:37,773 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:35:37,773 [INFO] legal_assistant:996 -    Host: 0.0.0.0:5000
+2026-06-24 22:35:37,773 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:35:37,773 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:36:36,809 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:36:36,814 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:36:36,814 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:36:36,814 [INFO] legal_assistant:996 -    Host: 0.0.0.0:5050
+2026-06-24 22:36:36,814 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:36:36,814 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:36:48,233 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:36:48,237 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:36:48,238 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:36:48,238 [INFO] legal_assistant:996 -    Host: 0.0.0.0:5050
+2026-06-24 22:36:48,238 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:36:48,238 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:37:29,184 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:37:29,188 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:37:29,188 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:37:29,188 [INFO] legal_assistant:996 -    Host: 0.0.0.0:5050
+2026-06-24 22:37:29,188 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:37:29,188 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:39:19,197 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:39:19,201 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:39:19,201 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:39:19,201 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8080
+2026-06-24 22:39:19,201 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:39:19,201 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:39:20,687 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:39:20,694 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:39:20,694 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:39:20,694 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8080
+2026-06-24 22:39:20,694 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:39:20,694 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:41:18,097 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:41:18,101 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:41:18,101 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:41:18,101 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8080
+2026-06-24 22:41:18,101 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:41:18,102 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:42:43,601 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:42:43,604 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:42:43,605 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:42:43,605 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8080
+2026-06-24 22:42:43,605 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:42:43,605 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:42:44,839 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:42:44,844 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:42:44,844 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:42:44,844 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8080
+2026-06-24 22:42:44,844 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:42:44,844 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:43:44,395 [INFO] legal_assistant:159 - New user created: chandhini@gmail.com [user]
+2026-06-24 22:43:44,410 [ERROR] legal_assistant:125 - DB stats error: Neither 'InstrumentedAttribute' object nor 'Comparator' object associated with SearchHistory.query has an attribute 'count'
+2026-06-24 22:43:44,460 [ERROR] legal_assistant:266 - Popular searches error: Neither 'InstrumentedAttribute' object nor 'Comparator' object associated with SearchHistory.query has an attribute 'with_entities'
+2026-06-24 22:44:04,004 [INFO] legal_assistant:239 - File saved: /Users/ashokkumar/Downloads/Legal_Assistant_for_Indian_Law/uploaded_documents/86371056_Aiml-resume.pdf
+2026-06-24 22:44:12,308 [INFO] legal_assistant:37 - spaCy model loaded.
+2026-06-24 22:44:32,235 [INFO] legal_assistant:32 - ChromaDB initialized at /Users/ashokkumar/Downloads/Legal_Assistant_for_Indian_Law/chroma_db
+2026-06-24 22:44:32,240 [INFO] legal_assistant:48 - ChromaDB collection ready: legal_documents (0 docs)
+2026-06-24 22:44:35,680 [INFO] legal_assistant:21 - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-24 22:44:42,194 [INFO] legal_assistant:23 - Embedding model loaded successfully.
+2026-06-24 22:44:42,309 [INFO] legal_assistant:111 - Stored 1 chunks for doc_id=1
+2026-06-24 22:44:42,314 [INFO] legal_assistant:301 - Document uploaded: Aiml-resume (ID=1)
+2026-06-24 22:47:41,111 [INFO] legal_assistant:214 - Exported CSV: /Users/ashokkumar/Downloads/Legal_Assistant_for_Indian_Law/exports/documents_20260624.csv
+2026-06-24 22:51:22,795 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:51:22,799 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:51:22,799 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:51:22,799 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8080
+2026-06-24 22:51:22,799 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:51:22,799 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:51:24,349 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:51:24,353 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:51:24,353 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:51:24,353 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8080
+2026-06-24 22:51:24,353 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:51:24,353 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:51:26,761 [ERROR] legal_assistant:125 - DB stats error: Neither 'InstrumentedAttribute' object nor 'Comparator' object associated with SearchHistory.query has an attribute 'count'
+2026-06-24 22:51:26,821 [ERROR] legal_assistant:266 - Popular searches error: Neither 'InstrumentedAttribute' object nor 'Comparator' object associated with SearchHistory.query has an attribute 'with_entities'
+2026-06-24 22:51:35,773 [INFO] legal_assistant:32 - ChromaDB initialized at /Users/ashokkumar/Downloads/Legal_Assistant_for_Indian_Law/chroma_db
+2026-06-24 22:51:35,783 [INFO] legal_assistant:48 - ChromaDB collection ready: legal_documents (1 docs)
+2026-06-24 22:51:38,467 [INFO] legal_assistant:21 - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-24 22:51:44,341 [INFO] legal_assistant:23 - Embedding model loaded successfully.
+2026-06-24 22:55:14,472 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:55:14,476 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:55:14,476 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:55:14,476 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8080
+2026-06-24 22:55:14,476 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:55:14,476 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:55:15,954 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:55:15,958 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:55:15,958 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:55:15,958 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8080
+2026-06-24 22:55:15,958 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:55:15,958 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 22:56:43,251 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 22:56:43,255 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 22:56:43,255 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 22:56:43,255 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8080
+2026-06-24 22:56:43,255 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 22:56:43,255 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 23:01:18,259 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 23:01:18,263 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 23:01:18,263 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 23:01:18,263 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8080
+2026-06-24 23:01:18,263 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 23:01:18,263 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 23:01:19,821 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 23:01:19,825 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 23:01:19,825 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 23:01:19,825 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8080
+2026-06-24 23:01:19,825 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 23:01:19,825 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 23:02:23,919 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 23:02:23,923 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 23:02:23,923 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 23:02:23,923 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8080
+2026-06-24 23:02:23,923 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 23:02:23,923 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 23:02:25,217 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-24 23:02:25,222 [INFO] legal_assistant:994 - ============================================================
+2026-06-24 23:02:25,222 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-24 23:02:25,222 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8080
+2026-06-24 23:02:25,222 [INFO] legal_assistant:997 -    Debug: True
+2026-06-24 23:02:25,222 [INFO] legal_assistant:998 - ============================================================
+2026-06-24 23:02:27,896 [ERROR] legal_assistant:125 - DB stats error: Neither 'InstrumentedAttribute' object nor 'Comparator' object associated with SearchHistory.query has an attribute 'count'
+2026-06-24 23:02:27,943 [ERROR] legal_assistant:266 - Popular searches error: Neither 'InstrumentedAttribute' object nor 'Comparator' object associated with SearchHistory.query has an attribute 'with_entities'
+2026-06-24 23:02:32,981 [INFO] legal_assistant:32 - ChromaDB initialized at /Users/ashokkumar/Downloads/Legal_Assistant_for_Indian_Law/chroma_db
+2026-06-24 23:02:32,991 [INFO] legal_assistant:48 - ChromaDB collection ready: legal_documents (1 docs)
+2026-06-24 23:02:35,592 [INFO] legal_assistant:21 - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-24 23:02:41,059 [INFO] legal_assistant:23 - Embedding model loaded successfully.
+2026-06-24 23:03:12,451 [WARNING] legal_assistant:352 - Ollama unavailable (Ollama timeout), using fallback.
+2026-06-27 18:41:45,471 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-27 18:41:45,474 [INFO] legal_assistant:994 - ============================================================
+2026-06-27 18:41:45,474 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-27 18:41:45,474 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8080
+2026-06-27 18:41:45,474 [INFO] legal_assistant:997 -    Debug: True
+2026-06-27 18:41:45,474 [INFO] legal_assistant:998 - ============================================================
+2026-06-27 18:42:27,590 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-27 18:42:27,592 [INFO] legal_assistant:994 - ============================================================
+2026-06-27 18:42:27,592 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-27 18:42:27,592 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8082
+2026-06-27 18:42:27,593 [INFO] legal_assistant:997 -    Debug: True
+2026-06-27 18:42:27,593 [INFO] legal_assistant:998 - ============================================================
+2026-06-27 18:42:28,561 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-27 18:42:28,564 [INFO] legal_assistant:994 - ============================================================
+2026-06-27 18:42:28,564 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-27 18:42:28,564 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8082
+2026-06-27 18:42:28,564 [INFO] legal_assistant:997 -    Debug: True
+2026-06-27 18:42:28,564 [INFO] legal_assistant:998 - ============================================================
+2026-06-27 18:44:26,521 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-27 18:44:26,524 [INFO] legal_assistant:994 - ============================================================
+2026-06-27 18:44:26,524 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-27 18:44:26,524 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8082
+2026-06-27 18:44:26,524 [INFO] legal_assistant:997 -    Debug: True
+2026-06-27 18:44:26,524 [INFO] legal_assistant:998 - ============================================================
+2026-06-27 18:44:27,359 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-27 18:44:27,362 [INFO] legal_assistant:994 - ============================================================
+2026-06-27 18:44:27,362 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-27 18:44:27,362 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8082
+2026-06-27 18:44:27,362 [INFO] legal_assistant:997 -    Debug: True
+2026-06-27 18:44:27,362 [INFO] legal_assistant:998 - ============================================================
+2026-06-27 18:45:47,260 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-27 18:45:47,263 [INFO] legal_assistant:994 - ============================================================
+2026-06-27 18:45:47,263 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-27 18:45:47,263 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8080
+2026-06-27 18:45:47,263 [INFO] legal_assistant:997 -    Debug: True
+2026-06-27 18:45:47,263 [INFO] legal_assistant:998 - ============================================================
+2026-06-27 18:46:25,167 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-27 18:46:25,170 [INFO] legal_assistant:994 - ============================================================
+2026-06-27 18:46:25,170 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-27 18:46:25,170 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8082
+2026-06-27 18:46:25,170 [INFO] legal_assistant:997 -    Debug: True
+2026-06-27 18:46:25,170 [INFO] legal_assistant:998 - ============================================================
+2026-06-27 18:46:25,991 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-27 18:46:25,994 [INFO] legal_assistant:994 - ============================================================
+2026-06-27 18:46:25,994 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-27 18:46:25,995 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8082
+2026-06-27 18:46:25,995 [INFO] legal_assistant:997 -    Debug: True
+2026-06-27 18:46:25,995 [INFO] legal_assistant:998 - ============================================================
+2026-06-27 18:47:15,647 [ERROR] legal_assistant:125 - DB stats error: Neither 'InstrumentedAttribute' object nor 'Comparator' object associated with SearchHistory.query has an attribute 'count'
+2026-06-27 18:47:15,677 [ERROR] legal_assistant:266 - Popular searches error: Neither 'InstrumentedAttribute' object nor 'Comparator' object associated with SearchHistory.query has an attribute 'with_entities'
+2026-06-27 18:48:11,982 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-27 18:48:11,985 [INFO] legal_assistant:994 - ============================================================
+2026-06-27 18:48:11,985 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-27 18:48:11,985 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8082
+2026-06-27 18:48:11,985 [INFO] legal_assistant:997 -    Debug: True
+2026-06-27 18:48:11,985 [INFO] legal_assistant:998 - ============================================================
+2026-06-27 18:48:12,816 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-27 18:48:12,819 [INFO] legal_assistant:994 - ============================================================
+2026-06-27 18:48:12,819 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-27 18:48:12,819 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8082
+2026-06-27 18:48:12,819 [INFO] legal_assistant:997 -    Debug: True
+2026-06-27 18:48:12,819 [INFO] legal_assistant:998 - ============================================================
+2026-06-27 18:48:14,826 [ERROR] legal_assistant:124 - DB stats error: Neither 'InstrumentedAttribute' object nor 'Comparator' object associated with SearchHistory.query has an attribute 'count'
+2026-06-27 18:48:14,865 [ERROR] legal_assistant:266 - Popular searches error: Neither 'InstrumentedAttribute' object nor 'Comparator' object associated with SearchHistory.query has an attribute 'with_entities'
+2026-06-27 18:50:00,966 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-27 18:50:00,969 [INFO] legal_assistant:994 - ============================================================
+2026-06-27 18:50:00,969 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-27 18:50:00,969 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8082
+2026-06-27 18:50:00,969 [INFO] legal_assistant:997 -    Debug: True
+2026-06-27 18:50:00,969 [INFO] legal_assistant:998 - ============================================================
+2026-06-27 18:50:01,817 [INFO] legal_assistant:40 - Database initialized successfully.
+2026-06-27 18:50:01,820 [INFO] legal_assistant:994 - ============================================================
+2026-06-27 18:50:01,820 [INFO] legal_assistant:995 - ⚖  AI Legal Assistant for Indian Law Starting...
+2026-06-27 18:50:01,820 [INFO] legal_assistant:996 -    Host: 0.0.0.0:8082
+2026-06-27 18:50:01,820 [INFO] legal_assistant:997 -    Debug: True
+2026-06-27 18:50:01,820 [INFO] legal_assistant:998 - ============================================================

@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+{% block title %}Upload Documents — ⚖ LegalAI India{% endblock %}
+{% block page_title %}Document Upload{% endblock %}
+{% block page_subtitle %}Upload legal documents for AI analysis and indexing{% endblock %}
+
+{% block content %}
+<div class="grid grid-2">
+
+  <!-- ── Upload Zone ─────────────────────────────────────────────────── -->
+  <div>
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header"><span class="card-title"><i class="fas fa-upload" style="color:var(--accent-primary)"></i> Upload Document</span></div>
+      <div class="card-body">
+        <form id="uploadForm" enctype="multipart/form-data">
+          <div class="form-group">
+            <label class="form-label">Document Title</label>
+            <input type="text" name="title" id="docTitle" class="form-control" placeholder="e.g. Supreme Court Judgment - IPC 302 Case 2023">
+          </div>
+
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <input type="file" id="fileInput" name="file" style="display:none" accept=".pdf,.docx,.doc,.txt,.png,.jpg,.jpeg,.tiff" onchange="onFileSelect(this)">
+            <div class="upload-icon">📁</div>
+            <div class="upload-title">Drop file here or click to browse</div>
+            <div class="upload-subtitle">Supports PDF, DOCX, TXT, PNG, JPG (OCR)</div>
+            <div class="upload-formats">
+              <span class="format-badge">📄 PDF</span>
+              <span class="format-badge">📝 DOCX</span>
+              <span class="format-badge">📋 TXT</span>
+              <span class="format-badge">🖼 PNG/JPG (OCR)</span>
+            </div>
+          </div>
+
+          <!-- Selected file preview -->
+          <div id="filePreview" style="display:none;margin-top:12px;">
+            <div class="flex items-center gap-2" style="padding:12px;background:var(--bg-input);border-radius:var(--radius-md);border:1px solid var(--border-color);">
+              <span id="fileIcon" style="font-size:24px;">📄</span>
+              <div style="flex:1;min-width:0;">
+                <div id="fileName" style="font-weight:600;font-size:14px;color:var(--text-heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+                <div id="fileSize" style="font-size:12px;color:var(--text-muted);"></div>
+              </div>
+              <button type="button" onclick="clearFile()" class="btn btn-ghost btn-sm btn-icon">✕</button>
+            </div>
+          </div>
+
+          <!-- Progress -->
+          <div class="upload-progress" id="uploadProgress">
+            <div class="flex items-center justify-between" style="margin-bottom:6px;">
+              <span style="font-size:13px;color:var(--text-secondary);" id="progressLabel">Processing...</span>
+              <span id="progressPct" style="font-size:12px;font-weight:700;color:var(--accent-primary);">0%</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-full" style="margin-top:16px;" id="uploadBtn">
+            <i class="fas fa-upload"></i> Upload & Analyze
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Analysis Result -->
+    <div id="analysisResult" style="display:none;" class="card">
+      <div class="card-header">
+        <span class="card-title"><i class="fas fa-magic" style="color:var(--accent-green)"></i> Analysis Results</span>
+        <span class="tag" style="color:var(--accent-green);">✓ Success</span>
+      </div>
+      <div class="card-body">
+        <div class="grid grid-2" style="gap:12px;margin-bottom:16px;">
+          <div style="background:var(--bg-input);border-radius:var(--radius-md);padding:12px;">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">CASE TYPE</div>
+            <div id="resCaseType" style="font-size:18px;font-weight:700;color:var(--accent-primary);">—</div>
+          </div>
+          <div style="background:var(--bg-input);border-radius:var(--radius-md);padding:12px;">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">WORD COUNT</div>
+            <div id="resWords" style="font-size:18px;font-weight:700;color:var(--accent-secondary);">—</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <div style="font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">AI SUMMARY</div>
+          <div id="resSummary" style="font-size:13px;color:var(--text-secondary);line-height:1.7;background:var(--bg-input);border-radius:var(--radius-sm);padding:12px;"></div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <div style="font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">KEYWORDS</div>
+          <div id="resKeywords" class="flex" style="flex-wrap:wrap;gap:6px;"></div>
+        </div>
+
+        <div id="resIPC" style="display:none;margin-bottom:12px;">
+          <div style="font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">IPC SECTIONS DETECTED</div>
+          <div id="resIPCSections" class="flex" style="flex-wrap:wrap;gap:6px;"></div>
+        </div>
+
+        <div id="resJudgeDiv" style="display:none;margin-bottom:12px;">
+          <div style="font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">JUDGES DETECTED</div>
+          <div id="resJudges" class="flex" style="flex-wrap:wrap;gap:6px;"></div>
+        </div>
+
+        <div class="flex gap-2" style="margin-top:16px;">
+          <a id="viewDocLink" href="#" class="btn btn-primary btn-sm"><i class="fas fa-eye"></i> View Document</a>
+          <a href="{{ url_for('chat') }}" class="btn btn-secondary btn-sm"><i class="fas fa-comments"></i> Chat About It</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Document Library ────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-books" style="color:var(--accent-gold)"></i> Document Library</span>
+      <span class="tag">{{ documents | length }} docs</span>
+    </div>
+    <div class="card-body" style="padding:0;max-height:700px;overflow-y:auto;">
+      {% if documents %}
+      {% for doc in documents %}
+      <div class="flex items-center gap-2" id="doc-{{ doc.id }}" style="padding:14px 20px;border-bottom:1px solid var(--border-color);transition:var(--transition);cursor:pointer;" onmouseover="this.style.background='var(--bg-card-hover)'" onmouseout="this.style.background=''">
+        <div style="font-size:24px;flex-shrink:0;">
+          {% if doc.file_type == 'pdf' %}📄
+          {% elif doc.file_type == 'docx' %}📝
+          {% elif doc.file_type in ['png','jpg','jpeg'] %}🖼
+          {% else %}📋{% endif %}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;color:var(--text-heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            {{ doc.title }}
+          </div>
+          <div class="flex gap-2" style="margin-top:4px;align-items:center;flex-wrap:wrap;">
+            {% if doc.case_type %}
+            <span class="result-badge badge-{{ doc.case_type.lower().replace(' ','') }}" style="font-size:10px;padding:1px 6px;">{{ doc.case_type }}</span>
+            {% endif %}
+            <span style="font-size:11px;color:var(--text-muted);">{{ doc.word_count or 0 }} words</span>
+            <span style="font-size:11px;color:var(--text-muted);">{{ doc.created_at | format_date }}</span>
+          </div>
+        </div>
+        <div class="flex gap-2" style="flex-shrink:0;">
+          {% if doc.is_indexed %}
+          <span title="Indexed in ChromaDB" style="color:var(--accent-green);font-size:14px;">✓</span>
+          {% endif %}
+          {% if doc.is_favorite %}
+          <span style="color:var(--accent-gold);font-size:14px;">⭐</span>
+          {% endif %}
+          <button onclick="toggleFavorite({{ doc.id }}, this)" class="btn btn-ghost btn-sm btn-icon" title="Favorite" style="font-size:14px;">
+            {% if doc.is_favorite %}⭐{% else %}☆{% endif %}
+          </button>
+          <button onclick="deleteDocument({{ doc.id }}, '{{ doc.title }}')" class="btn btn-ghost btn-sm btn-icon" title="Delete" style="color:var(--accent-red);">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div style="text-align:center;padding:48px;color:var(--text-muted);">
+        <div style="font-size:48px;margin-bottom:12px;">📭</div>
+        <div style="font-size:16px;font-weight:600;margin-bottom:8px;">No documents yet</div>
+        <div style="font-size:13px;">Upload your first legal document to get started</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Drag and drop
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) setFile(file);
+});
+
+function onFileSelect(input) { if (input.files[0]) setFile(input.files[0]); }
+
+function setFile(file) {
+  const icons = { pdf: '📄', docx: '📝', doc: '📝', txt: '📋', png: '🖼', jpg: '🖼', jpeg: '🖼' };
+  const ext = file.name.split('.').pop().toLowerCase();
+  document.getElementById('fileIcon').textContent = icons[ext] || '📁';
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileSize').textContent = formatSize(file.size);
+  document.getElementById('filePreview').style.display = 'block';
+  if (!document.getElementById('docTitle').value) {
+    document.getElementById('docTitle').value = file.name.replace(/\.[^.]+$/, '');
+  }
+}
+
+function clearFile() {
+  document.getElementById('fileInput').value = '';
+  document.getElementById('filePreview').style.display = 'none';
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1048576).toFixed(1) + ' MB';
+}
+
+// Upload form
+document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const fileInput = document.getElementById('fileInput');
+  if (!fileInput.files[0]) { showToast('Please select a file', 'warning'); return; }
+
+  const btn = document.getElementById('uploadBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Uploading...';
+
+  const progress = document.getElementById('uploadProgress');
+  const fill = document.getElementById('progressFill');
+  const label = document.getElementById('progressLabel');
+  const pct = document.getElementById('progressPct');
+  progress.style.display = 'block';
+
+  // Animate progress
+  const steps = [
+    [20, 'Extracting text...'],
+    [45, 'Running NLP analysis...'],
+    [65, 'Generating embeddings...'],
+    [80, 'Storing in ChromaDB...'],
+    [95, 'Finalizing...'],
+  ];
+  let stepIdx = 0;
+  const interval = setInterval(() => {
+    if (stepIdx < steps.length) {
+      fill.style.width = steps[stepIdx][0] + '%';
+      pct.textContent = steps[stepIdx][0] + '%';
+      label.textContent = steps[stepIdx][1];
+      stepIdx++;
+    }
+  }, 1200);
+
+  const formData = new FormData(this);
+  try {
+    const resp = await fetch('/upload', { method: 'POST', body: formData });
+    const data = await resp.json();
+    clearInterval(interval);
+
+    if (data.success) {
+      fill.style.width = '100%';
+      pct.textContent = '100%';
+      label.textContent = 'Complete!';
+
+      // Show results
+      document.getElementById('analysisResult').style.display = 'block';
+      document.getElementById('resCaseType').textContent = data.case_type || 'Unknown';
+      document.getElementById('resWords').textContent = (data.word_count || 0).toLocaleString();
+      document.getElementById('resSummary').textContent = data.summary || 'No summary available';
+      document.getElementById('viewDocLink').href = '/document/' + data.doc_id;
+
+      // Keywords
+      const kwDiv = document.getElementById('resKeywords');
+      kwDiv.innerHTML = '';
+      (data.keywords || []).forEach(kw => {
+        const span = document.createElement('span');
+        span.className = 'tag';
+        span.textContent = kw;
+        kwDiv.appendChild(span);
+      });
+
+      // IPC sections
+      if (data.ipc_sections && data.ipc_sections.length > 0) {
+        document.getElementById('resIPC').style.display = 'block';
+        const ipcDiv = document.getElementById('resIPCSections');
+        ipcDiv.innerHTML = '';
+        data.ipc_sections.forEach(s => {
+          const span = document.createElement('span');
+          span.className = 'tag';
+          span.style.cssText = 'border-color:rgba(239,68,68,.4);color:#ef4444;';
+          span.textContent = 'IPC ' + s;
+          ipcDiv.appendChild(span);
+        });
+      }
+
+      // Judges
+      if (data.judges && data.judges.length > 0) {
+        document.getElementById('resJudgeDiv').style.display = 'block';
+        const jDiv = document.getElementById('resJudges');
+        jDiv.innerHTML = '';
+        data.judges.forEach(j => {
+          const span = document.createElement('span');
+          span.className = 'tag';
+          span.textContent = j;
+          jDiv.appendChild(span);
+        });
+      }
+
+      showToast(data.message, 'success');
+      setTimeout(() => location.reload(), 4000);
+    } else {
+      fill.style.background = 'var(--accent-red)';
+      label.textContent = 'Failed: ' + (data.error || 'Unknown error');
+      showToast(data.error || 'Upload failed', 'danger');
+    }
+  } catch(err) {
+    clearInterval(interval);
+    showToast('Upload error: ' + err.message, 'danger');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-upload"></i> Upload & Analyze';
+  }
+});
+
+async function toggleFavorite(docId, btn) {
+  const resp = await fetch(`/document/${docId}/favorite`, { method: 'POST' });
+  const data = await resp.json();
+  if (data.success) btn.textContent = data.is_favorite ? '⭐' : '☆';
+}
+
+async function deleteDocument(docId, title) {
+  if (!confirm(`Delete "${title}"?\nThis will remove the document and its vectors.`)) return;
+  const resp = await fetch(`/document/${docId}/delete`, { method: 'POST' });
+  if (resp.ok) {
+    document.getElementById('doc-' + docId)?.remove();
+    showToast('Document deleted', 'success');
+  }
+}
+</script>
+{% endblock %}

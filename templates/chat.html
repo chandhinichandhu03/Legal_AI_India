@@ -1,0 +1,367 @@
+{% extends "base.html" %}
+{% block title %}AI Chat — ⚖ LegalAI India{% endblock %}
+{% block page_title %}AI Legal Chat{% endblock %}
+{% block page_subtitle %}RAG-powered chatbot for Indian law — ask anything{% endblock %}
+
+{% block content %}
+<div class="chat-container" style="height:calc(100vh - var(--topbar-height) - 48px);margin:-24px;border-radius:0;">
+
+  <!-- ── Chat Sidebar ─────────────────────────────────────────────────── -->
+  <div class="chat-sidebar">
+    <div style="padding:16px;border-bottom:1px solid var(--border-color);">
+      <button onclick="newSession()" class="btn btn-primary w-full btn-sm">
+        <i class="fas fa-plus"></i> New Chat
+      </button>
+    </div>
+
+    <!-- Model selector -->
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border-color);">
+      <div class="form-label" style="margin-bottom:6px;">AI Model</div>
+      <select id="modelSelector" class="form-control" style="font-size:13px;" onchange="currentModel=this.value">
+        {% for m in ollama_models %}
+        <option value="{{ m }}" {% if m == current_model %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+      <div class="flex items-center gap-2" style="margin-top:8px;">
+        <div class="status-dot {% if ollama_status.online %}online{% else %}offline{% endif %}"></div>
+        <span style="font-size:11px;color:var(--text-muted);">Ollama {% if ollama_status.online %}running{% else %}offline{% endif %}</span>
+      </div>
+    </div>
+
+    <!-- Language -->
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border-color);">
+      <div class="form-label" style="margin-bottom:6px;">Response Language</div>
+      <select id="chatLang" class="form-control" style="font-size:13px;">
+        {% for code, name in supported_languages.items() %}
+        <option value="{{ code }}" {% if code == 'en' %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Quick Questions -->
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border-color);">
+      <div class="form-label" style="margin-bottom:8px;">Quick Questions</div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        {% set quick = [
+          "What is IPC Section 302?",
+          "How to file an FIR?",
+          "Explain Section 125 CrPC maintenance",
+          "What is POCSO Act?",
+          "How does RERA protect home buyers?",
+          "What is the difference between cognizable and non-cognizable offence?",
+          "Explain Right to Information Act",
+          "How to file consumer complaint?"
+        ] %}
+        {% for q in quick %}
+        <button onclick="askQuick('{{ q }}')" class="btn btn-ghost btn-sm" style="text-align:left;justify-content:flex-start;font-size:12px;padding:6px 10px;white-space:normal;height:auto;">
+          {{ q }}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Export -->
+    <div style="padding:12px 16px;margin-top:auto;">
+      <a href="/export/chat/pdf" class="btn btn-secondary w-full btn-sm">
+        <i class="fas fa-file-pdf"></i> Export Chat PDF
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Chat Main ───────────────────────────────────────────────────── -->
+  <div class="chat-main">
+
+    <!-- Messages -->
+    <div class="chat-messages" id="chatMessages">
+      <!-- Welcome message -->
+      <div class="message assistant" id="welcomeMsg">
+        <div class="message-avatar">⚖</div>
+        <div>
+          <div class="message-bubble">
+            <strong>Namaste! I'm your AI Legal Assistant for Indian Law.</strong><br><br>
+            I can help you with:<br>
+            • 📚 Explaining IPC sections and Indian Acts<br>
+            • ⚖ Understanding court procedures<br>
+            • 🔍 Analyzing uploaded legal documents<br>
+            • 🎯 Predicting case types<br>
+            • 🌐 Answering in Tamil, Hindi, and other languages<br><br>
+            <em style="font-size:12px;color:var(--text-muted);">💡 Upload a document first for document-specific Q&A. Always consult a qualified advocate for legal advice.</em>
+          </div>
+          <div class="message-meta">
+            <span>⚖ LegalAI India</span>
+            <span>•</span>
+            <span class="confidence-badge confidence-high">System</span>
+          </div>
+        </div>
+      </div>
+
+      {% for msg in history %}
+      <!-- User -->
+      <div class="message user">
+        <div class="message-avatar" style="font-size:14px;">👤</div>
+        <div>
+          <div class="message-bubble">{{ msg.question }}</div>
+          <div class="message-meta" style="justify-content:flex-end;">
+            <span>{{ msg.created_at | format_date }}</span>
+          </div>
+        </div>
+      </div>
+      <!-- Assistant -->
+      <div class="message assistant">
+        <div class="message-avatar">⚖</div>
+        <div>
+          <div class="message-bubble" id="msg-{{ msg.id }}">{{ msg.answer }}</div>
+          <div class="message-meta">
+            <span>{{ msg.model_used or 'AI' }}</span>
+            {% if msg.confidence_score %}
+            <span class="confidence-badge {% if msg.confidence_score > 0.7 %}confidence-high{% elif msg.confidence_score > 0.4 %}confidence-medium{% else %}confidence-low{% endif %}">
+              {{ "%.0f"|format(msg.confidence_score * 100) }}% confidence
+            </span>
+            {% endif %}
+            {% if msg.hallucination_flag %}
+            <span class="hallucination-warning" style="padding:2px 8px;font-size:10px;">⚠ Verify answer</span>
+            {% endif %}
+          </div>
+          {% if msg.sources %}
+          <div class="source-chips">
+            {% for src in msg.sources[:3] %}
+            <span class="source-chip">📄 {{ src.doc_title | truncate_smart(25) }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Input Area -->
+    <div class="chat-input-area">
+      <!-- Toolbar -->
+      <div class="chat-toolbar" style="margin-bottom:8px;">
+        <span style="font-size:12px;color:var(--text-muted);">Session: <code style="font-size:11px;">{{ session_id[:8] }}...</code></span>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text-muted);">
+            <input type="checkbox" id="streamMode" style="accent-color:var(--accent-primary);"> Stream
+          </label>
+          <button onclick="clearChat()" class="btn btn-ghost btn-sm" style="font-size:12px;">
+            <i class="fas fa-broom"></i> Clear
+          </button>
+        </div>
+      </div>
+
+      <div class="chat-input-wrapper">
+        <textarea id="chatInput" placeholder="Ask about Indian law, IPC sections, case procedures... (Enter to send, Shift+Enter for newline)" rows="1" onkeydown="handleKeydown(event)" oninput="autoResize(this)"></textarea>
+        <div style="display:flex;gap:6px;align-items:flex-end;">
+          {% if enable_voice %}
+          <button onclick="toggleVoice()" class="btn btn-ghost btn-icon" id="voiceBtn" data-tooltip="Voice input" style="font-size:18px;padding:6px;">🎤</button>
+          {% endif %}
+          <button onclick="sendMessage()" id="sendBtn" class="btn btn-primary btn-icon" style="padding:10px 16px;">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:16px;margin-top:8px;justify-content:center;">
+        <span style="font-size:11px;color:var(--text-muted);">⚠ AI answers are for reference only. Consult a licensed advocate for legal advice.</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let currentModel = '{{ current_model }}';
+let isTyping = false;
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function handleKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function askQuick(q) {
+  document.getElementById('chatInput').value = q;
+  sendMessage();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const question = input.value.trim();
+  if (!question || isTyping) return;
+
+  isTyping = true;
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('sendBtn').disabled = true;
+
+  // Add user message
+  appendMessage('user', question);
+
+  // Add typing indicator
+  const typingId = 'typing-' + Date.now();
+  appendTypingIndicator(typingId);
+
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question,
+        model: document.getElementById('modelSelector').value,
+        language: document.getElementById('chatLang').value,
+      })
+    });
+    const data = await resp.json();
+    document.getElementById(typingId)?.remove();
+
+    if (data.success) {
+      const answer = data.translated_answer || data.answer;
+      const msgEl = appendMessage('assistant', answer, {
+        model: data.model_used,
+        confidence: data.confidence_score,
+        hallucination: data.hallucination_flag,
+        hallucination_score: data.hallucination_score,
+        sources: data.sources,
+        citations: data.citations,
+        follow_ups: data.follow_up_questions,
+        response_time: data.response_time,
+        chat_id: data.chat_id,
+      });
+    } else {
+      document.getElementById(typingId)?.remove();
+      appendMessage('assistant', '⚠ Error: ' + (data.error || 'Failed to get response'));
+    }
+  } catch(err) {
+    document.getElementById(typingId)?.remove();
+    appendMessage('assistant', '⚠ Network error: ' + err.message);
+  } finally {
+    isTyping = false;
+    document.getElementById('sendBtn').disabled = false;
+  }
+}
+
+function appendMessage(role, text, meta = {}) {
+  const messages = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+  div.style.animation = 'slideIn 0.3s ease';
+
+  const avatar = role === 'user' ? '👤' : '⚖';
+  const avatarStyle = role === 'user' ? 'background:var(--gradient-primary);' : 'background:rgba(0,212,255,0.2);';
+
+  // Render markdown for assistant messages
+  let renderedText = text;
+  if (role === 'assistant' && typeof marked !== 'undefined') {
+    renderedText = marked.parse(text);
+  }
+
+  let metaHTML = '';
+  if (role === 'assistant' && meta.model) {
+    const confClass = meta.confidence > 0.7 ? 'confidence-high' : meta.confidence > 0.4 ? 'confidence-medium' : 'confidence-low';
+    const confPct = meta.confidence ? Math.round(meta.confidence * 100) : 0;
+    metaHTML += `<div class="message-meta">
+      <span>${meta.model}</span>
+      ${meta.confidence ? `<span class="confidence-badge ${confClass}">${confPct}% confidence</span>` : ''}
+      ${meta.response_time ? `<span style="font-size:10px;color:var(--text-muted);">${meta.response_time}s</span>` : ''}
+      ${meta.chat_id ? `<button onclick="sendFeedback(${meta.chat_id},true)" style="background:none;border:none;cursor:pointer;font-size:14px;" title="Helpful">👍</button><button onclick="sendFeedback(${meta.chat_id},false)" style="background:none;border:none;cursor:pointer;font-size:14px;" title="Not helpful">👎</button>` : ''}
+    </div>`;
+
+    if (meta.hallucination && meta.hallucination_score > 0.5) {
+      metaHTML += `<div class="hallucination-warning">⚠ Low confidence answer — please verify with official sources or a legal professional (score: ${Math.round(meta.hallucination_score*100)}%)</div>`;
+    }
+
+    if (meta.sources && meta.sources.length > 0) {
+      metaHTML += '<div class="source-chips">';
+      meta.sources.forEach(s => {
+        metaHTML += `<span class="source-chip" title="${s.doc_title}">📄 ${s.doc_title.substring(0,25)}${s.doc_title.length>25?'...':''} (${Math.round(s.score*100)}%)</span>`;
+      });
+      metaHTML += '</div>';
+    }
+
+    if (meta.follow_ups && meta.follow_ups.length > 0) {
+      metaHTML += '<div class="follow-up-questions"><div class="follow-up-title">💡 Follow-up questions:</div>';
+      meta.follow_ups.forEach(q => {
+        metaHTML += `<span class="follow-up-chip" onclick="document.getElementById('chatInput').value='${q.replace(/'/g,"\\'")}';sendMessage();">${q}</span>`;
+      });
+      metaHTML += '</div>';
+    }
+  }
+
+  div.innerHTML = `
+    <div class="message-avatar" style="${avatarStyle}font-size:16px;">${avatar}</div>
+    <div style="flex:1;min-width:0;">
+      <div class="message-bubble">${renderedText}</div>
+      ${metaHTML}
+    </div>
+  `;
+
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+  return div;
+}
+
+function appendTypingIndicator(id) {
+  const messages = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'message assistant';
+  div.id = id;
+  div.innerHTML = `
+    <div class="message-avatar" style="background:rgba(0,212,255,0.2);">⚖</div>
+    <div>
+      <div class="message-bubble" style="padding:12px 16px;">
+        <div class="typing-indicator">
+          <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+        </div>
+      </div>
+    </div>
+  `;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+async function sendFeedback(chatId, helpful) {
+  await fetch('/chat/feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, helpful })
+  });
+  showToast(helpful ? 'Thanks for your feedback! 👍' : 'Feedback noted 👎', 'info');
+}
+
+async function newSession() {
+  if (!confirm('Start a new chat session?')) return;
+  const resp = await fetch('/chat/new-session', { method: 'POST' });
+  const data = await resp.json();
+  if (data.success) {
+    document.getElementById('chatMessages').innerHTML = '';
+    showToast('New chat session started', 'success');
+  }
+}
+
+function clearChat() {
+  if (!confirm('Clear the chat display?')) return;
+  const messages = document.getElementById('chatMessages');
+  Array.from(messages.children).forEach(c => {
+    if (c.id !== 'welcomeMsg') c.remove();
+  });
+}
+
+// Text-to-speech for AI answers
+function speakAnswer(text) {
+  if (!window.speechSynthesis) return;
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = document.getElementById('chatLang').value === 'ta' ? 'ta-IN' : 'hi-IN';
+  window.speechSynthesis.speak(utt);
+}
+
+// Scroll to bottom on load
+window.addEventListener('load', () => {
+  const m = document.getElementById('chatMessages');
+  m.scrollTop = m.scrollHeight;
+});
+</script>
+{% endblock %}

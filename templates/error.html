@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Error — ⚖ LegalAI India{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg-primary);padding:20px;">
+  <div style="text-align:center;max-width:400px;">
+    <div style="font-size:80px;margin-bottom:16px;">
+      {% if code == 403 %}🔒{% elif code == 404 %}🔍{% else %}⚠{% endif %}
+    </div>
+    <div style="font-size:64px;font-weight:800;background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;">
+      {{ code }}
+    </div>
+    <div style="font-size:20px;font-weight:700;color:var(--text-heading);margin:12px 0;">{{ message }}</div>
+    <div style="font-size:14px;color:var(--text-muted);margin-bottom:24px;">
+      {% if code == 403 %}You don't have permission to access this page.
+      {% elif code == 404 %}The page you're looking for doesn't exist.
+      {% else %}Something went wrong. Please try again.{% endif %}
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <a href="/" class="btn btn-primary"><i class="fas fa-home"></i> Go Home</a>
+      <button onclick="history.back()" class="btn btn-ghost">← Go Back</button>
+    </div>
+  </div>
+</div>
+<script>
+const t = localStorage.getItem('theme') || 'dark';
+document.documentElement.setAttribute('data-theme', t);
+</script>
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}⚖ LegalAI India{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}AI-powered Legal Assistant for Indian Law using RAG, Ollama, NLP and Machine Learning{% endblock %}">
+  <meta name="keywords" content="Indian law, legal AI, IPC sections, RAG, legal assistant">
+
+  <!-- Preconnect -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+  <!-- D3.js for Knowledge Graph -->
+  <script src="https://d3js.org/d3.v7.min.js" defer></script>
+  <!-- Marked (markdown rendering) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+
+  {% block extra_head %}{% endblock %}
+
+  <style>
+    /* Inline theme persistence */
+    html { transition: color-scheme 0.3s; }
+  </style>
+</head>
+<body>
+{% if current_user.is_authenticated %}
+<div class="app-wrapper">
+
+  <!-- ── Sidebar ─────────────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <a href="{{ url_for('index') }}" class="sidebar-logo">
+      <div class="logo-icon">⚖</div>
+      <div class="logo-text">
+        <div class="logo-title">LegalAI India</div>
+        <div class="logo-subtitle">AI Legal Assistant</div>
+      </div>
+    </a>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Main</div>
+        <a href="{{ url_for('index') }}" class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+          <span class="nav-icon"><i class="fas fa-home"></i></span>
+          <span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('chat') }}" class="nav-item {% if request.endpoint == 'chat' %}active{% endif %}">
+          <span class="nav-icon"><i class="fas fa-comments"></i></span>
+          <span>AI Chat</span>
+          <span class="nav-badge">RAG</span>
+        </a>
+        <a href="{{ url_for('upload') }}" class="nav-item {% if request.endpoint == 'upload' %}active{% endif %}">
+          <span class="nav-icon"><i class="fas fa-file-upload"></i></span>
+          <span>Upload Docs</span>
+        </a>
+        <a href="{{ url_for('search') }}" class="nav-item {% if request.endpoint == 'search' %}active{% endif %}">
+          <span class="nav-icon"><i class="fas fa-search"></i></span>
+          <span>Search</span>
+        </a>
+        <a href="{{ url_for('predict') }}" class="nav-item {% if request.endpoint == 'predict' %}active{% endif %}">
+          <span class="nav-icon"><i class="fas fa-brain"></i></span>
+          <span>Predict Case</span>
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Tools</div>
+        <a href="{{ url_for('history') }}" class="nav-item {% if request.endpoint == 'history' %}active{% endif %}">
+          <span class="nav-icon"><i class="fas fa-history"></i></span>
+          <span>Chat History</span>
+        </a>
+        <a href="/search?mode=ipc" class="nav-item">
+          <span class="nav-icon"><i class="fas fa-gavel"></i></span>
+          <span>IPC Lookup</span>
+        </a>
+        <a href="#" onclick="toggleKnowledgeGraph(event)" class="nav-item">
+          <span class="nav-icon"><i class="fas fa-project-diagram"></i></span>
+          <span>Knowledge Graph</span>
+        </a>
+        <a href="{{ url_for('export_docs_csv') }}" class="nav-item">
+          <span class="nav-icon"><i class="fas fa-file-export"></i></span>
+          <span>Export Data</span>
+        </a>
+      </div>
+
+      {% if current_user.role == 'admin' %}
+      <div class="nav-section">
+        <div class="nav-section-title">Admin</div>
+        <a href="{{ url_for('admin') }}" class="nav-item {% if request.endpoint == 'admin' %}active{% endif %}">
+          <span class="nav-icon"><i class="fas fa-shield-alt"></i></span>
+          <span>Admin Panel</span>
+        </a>
+        <a href="{{ url_for('api_status') }}" target="_blank" class="nav-item">
+          <span class="nav-icon"><i class="fas fa-server"></i></span>
+          <span>API Status</span>
+        </a>
+      </div>
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-card" onclick="location.href='{{ url_for('logout') }}'">
+        <div class="user-avatar">
+          {{ (current_user.full_name or current_user.username)[0].upper() }}
+        </div>
+        <div class="user-info">
+          <div class="user-name">{{ current_user.full_name or current_user.username }}</div>
+          <span class="user-role">{{ current_user.role }}</span>
+        </div>
+        <i class="fas fa-sign-out-alt" style="color: var(--text-muted); font-size: 14px;"></i>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main ───────────────────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button onclick="toggleSidebar()" class="btn btn-ghost btn-icon" style="font-size:18px;">
+          <i class="fas fa-bars"></i>
+        </button>
+        <div>
+          <div class="page-title">{% block page_title %}Dashboard{% endblock %}</div>
+          <div class="page-subtitle">{% block page_subtitle %}AI Legal Assistant for Indian Law{% endblock %}</div>
+        </div>
+      </div>
+
+      <!-- Global search -->
+      <div class="topbar-search">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" placeholder="Search cases, IPC sections, keywords..."
+               id="globalSearch" onkeydown="if(event.key==='Enter') window.location='/search?q='+this.value">
+      </div>
+
+      <div class="topbar-actions">
+        <!-- Language selector -->
+        <select id="langSelector" class="form-control" style="width:auto;padding:6px 10px;" onchange="setLanguage(this.value)">
+          {% for code, name in supported_languages.items() %}
+          <option value="{{ code }}" {% if code == 'en' %}selected{% endif %}>{{ name }}</option>
+          {% endfor %}
+        </select>
+
+        <!-- Theme toggle -->
+        <button onclick="toggleTheme()" class="btn btn-ghost btn-icon" id="themeToggle" data-tooltip="Toggle Theme">
+          <i class="fas fa-moon" id="themeIcon"></i>
+        </button>
+
+        <!-- Voice input -->
+        {% if enable_voice %}
+        <button onclick="toggleVoice()" class="btn btn-ghost btn-icon" id="voiceBtn" data-tooltip="Voice Input">
+          <i class="fas fa-microphone"></i>
+        </button>
+        {% endif %}
+
+        <!-- Notifications -->
+        <button class="btn btn-ghost btn-icon" data-tooltip="Notifications">
+          <i class="fas fa-bell"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Flash messages -->
+    <div style="padding: 0 24px;" id="flash-messages">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }}" style="margin-top: 16px;">
+        <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+        {{ message }}
+        <button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;color:inherit;cursor:pointer;font-size:16px;">×</button>
+      </div>
+      {% endfor %}
+      {% endwith %}
+    </div>
+
+    <!-- Page content -->
+    <div class="content-area">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+
+{% else %}
+<!-- Non-authenticated pages -->
+{% block auth_content %}{% endblock %}
+{% endif %}
+
+<!-- Knowledge Graph Modal -->
+<div class="modal-overlay" id="graphModal">
+  <div class="modal" style="max-width:900px;max-height:85vh;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h3 class="card-title">🕸 Legal Knowledge Graph</h3>
+      <button onclick="closeGraphModal()" class="btn btn-ghost btn-icon">✕</button>
+    </div>
+    <div id="graphContainer" style="height:500px;background:var(--bg-secondary);border-radius:12px;"></div>
+  </div>
+</div>
+
+<!-- Toast notifications -->
+<div id="toastContainer" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
+
+<script>
+// ── Theme Management ──────────────────────────────────────────────────
+const savedTheme = localStorage.getItem('theme') || 'dark';
+document.documentElement.setAttribute('data-theme', savedTheme);
+updateThemeIcon(savedTheme);
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  updateThemeIcon(next);
+}
+function updateThemeIcon(theme) {
+  const icon = document.getElementById('themeIcon');
+  if (icon) icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+}
+
+// ── Sidebar Toggle ────────────────────────────────────────────────────
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  if (window.innerWidth <= 768) {
+    sidebar.classList.toggle('mobile-open');
+  } else {
+    sidebar.classList.toggle('collapsed');
+  }
+}
+
+// ── Language ──────────────────────────────────────────────────────────
+function setLanguage(lang) {
+  localStorage.setItem('preferred_lang', lang);
+}
+const savedLang = localStorage.getItem('preferred_lang') || 'en';
+const langSel = document.getElementById('langSelector');
+if (langSel) langSel.value = savedLang;
+
+// ── Voice Input ───────────────────────────────────────────────────────
+let voiceActive = false;
+let recognition = null;
+
+function toggleVoice() {
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    showToast('Voice not supported in this browser', 'warning');
+    return;
+  }
+  if (voiceActive) {
+    recognition && recognition.stop();
+    voiceActive = false;
+    document.getElementById('voiceBtn').style.color = '';
+    return;
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = savedLang === 'ta' ? 'ta-IN' : savedLang === 'hi' ? 'hi-IN' : 'en-IN';
+  recognition.interimResults = false;
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    const chatInput = document.getElementById('chatInput');
+    const globalSearch = document.getElementById('globalSearch');
+    if (chatInput) chatInput.value = transcript;
+    else if (globalSearch) globalSearch.value = transcript;
+    voiceActive = false;
+    document.getElementById('voiceBtn').style.color = '';
+  };
+  recognition.start();
+  voiceActive = true;
+  document.getElementById('voiceBtn').style.color = '#ff5252';
+}
+
+// ── Toast Notifications ───────────────────────────────────────────────
+function showToast(message, type = 'info', duration = 4000) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  const icons = { success: '✓', danger: '✕', warning: '⚠', info: 'ℹ' };
+  toast.style.cssText = `
+    display:flex;align-items:center;gap:10px;
+    padding:12px 18px;border-radius:12px;
+    background:var(--bg-card);border:1px solid var(--border-color);
+    font-size:14px;color:var(--text-primary);
+    box-shadow:0 8px 24px rgba(0,0,0,0.4);
+    animation:slideIn 0.3s ease;max-width:320px;
+  `;
+  toast.innerHTML = `<span>${icons[type] || 'ℹ'}</span><span style="flex:1">${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, duration);
+}
+
+// ── Knowledge Graph ───────────────────────────────────────────────────
+async function toggleKnowledgeGraph(e) {
+  e && e.preventDefault();
+  const modal = document.getElementById('graphModal');
+  modal.classList.add('active');
+  renderGraph();
+}
+function closeGraphModal() {
+  document.getElementById('graphModal').classList.remove('active');
+}
+
+async function renderGraph() {
+  const container = document.getElementById('graphContainer');
+  container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted)"><div class="spinner"></div>&nbsp; Loading graph...</div>';
+
+  try {
+    const resp = await fetch('/api/knowledge-graph');
+    const data = await resp.json();
+    if (!data.nodes || !data.nodes.length) {
+      container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted)">📭 No documents uploaded yet</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    const W = container.offsetWidth, H = container.offsetHeight;
+    const svg = d3.select(container).append('svg').attr('width', W).attr('height', H);
+    const g = svg.append('g');
+
+    // Zoom
+    svg.call(d3.zoom().on('zoom', (e) => g.attr('transform', e.transform)));
+
+    const colorMap = { document:'#6c63ff', section:'#00d4ff', judge:'#00e676' };
+
+    const sim = d3.forceSimulation(data.nodes)
+      .force('link', d3.forceLink(data.links).id(d => d.id).distance(80))
+      .force('charge', d3.forceManyBody().strength(-200))
+      .force('center', d3.forceCenter(W/2, H/2));
+
+    const link = g.append('g').selectAll('line')
+      .data(data.links).enter().append('line')
+      .style('stroke', '#334155').style('stroke-width', 1);
+
+    const node = g.append('g').selectAll('circle')
+      .data(data.nodes).enter().append('circle')
+      .attr('r', d => d.type === 'document' ? 14 : 9)
+      .style('fill', d => colorMap[d.type] || '#6c63ff')
+      .style('cursor', 'pointer')
+      .call(d3.drag()
+        .on('start', (e,d) => { if(!e.active) sim.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+        .on('drag', (e,d) => { d.fx=e.x; d.fy=e.y; })
+        .on('end', (e,d) => { if(!e.active) sim.alphaTarget(0); d.fx=null; d.fy=null; })
+      );
+
+    const label = g.append('g').selectAll('text')
+      .data(data.nodes).enter().append('text')
+      .text(d => d.label)
+      .style('font-size', '10px').style('fill', '#ccd6f6')
+      .attr('dx', 16).attr('dy', 4);
+
+    node.append('title').text(d => d.label);
+
+    sim.on('tick', () => {
+      link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+      node.attr('cx',d=>d.x).attr('cy',d=>d.y);
+      label.attr('x',d=>d.x).attr('y',d=>d.y);
+    });
+  } catch(e) {
+    container.innerHTML = `<div style="padding:20px;color:var(--accent-red)">Failed to load graph: ${e.message}</div>`;
+  }
+}
+
+// ── Auto-dismiss flash messages ───────────────────────────────────────
+setTimeout(() => {
+  document.querySelectorAll('.alert').forEach(a => {
+    a.style.transition = 'opacity 0.5s';
+    a.style.opacity = '0';
+    setTimeout(() => a.remove(), 500);
+  });
+}, 5000);
+
+// ── Close modal on outside click ─────────────────────────────────────
+document.getElementById('graphModal')?.addEventListener('click', function(e) {
+  if (e.target === this) closeGraphModal();
+});
+</script>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

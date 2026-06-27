@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Chat History — ⚖ LegalAI India{% endblock %}
+{% block page_title %}Chat History{% endblock %}
+{% block page_subtitle %}All your past AI legal conversations{% endblock %}
+
+{% block content %}
+<div class="grid grid-2" style="gap:20px;">
+
+  <!-- ── Session Selector ───────────────────────────────────────────── -->
+  <div style="grid-column:1/-1;">
+    <div class="card" style="padding:16px 24px;">
+      <div class="flex items-center gap-2" style="flex-wrap:wrap;">
+        <span style="font-size:13px;font-weight:600;color:var(--text-secondary);">Sessions:</span>
+        <a href="{{ url_for('history') }}" class="btn {% if not current_session %}btn-primary{% else %}btn-ghost{% endif %} btn-sm">All</a>
+        {% for s in sessions %}
+        <a href="{{ url_for('history', session=s) }}"
+           class="btn {% if current_session == s %}btn-primary{% else %}btn-ghost{% endif %} btn-sm"
+           style="font-family:var(--font-mono);font-size:11px;">
+          {{ s[:8] }}...
+        </a>
+        {% endfor %}
+        <a href="{{ url_for('export_chat_pdf') }}" class="btn btn-ghost btn-sm" style="margin-left:auto;">
+          <i class="fas fa-file-pdf"></i> Export PDF
+        </a>
+        <a href="{{ url_for('chat') }}" class="btn btn-primary btn-sm">
+          <i class="fas fa-plus"></i> New Chat
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Chat List ──────────────────────────────────────────────────── -->
+  <div style="grid-column:1/-1;">
+    {% if chats.items %}
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      {% for chat in chats.items %}
+      <div class="card" style="overflow:visible;">
+        <div class="card-body">
+          <!-- Question -->
+          <div class="flex gap-2" style="margin-bottom:12px;">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;font-size:14px;color:white;flex-shrink:0;">Q</div>
+            <div style="flex:1;">
+              <div style="font-size:15px;font-weight:600;color:var(--text-heading);">{{ chat.question }}</div>
+              <div class="flex gap-2" style="margin-top:4px;flex-wrap:wrap;align-items:center;">
+                <span style="font-size:11px;color:var(--text-muted);">{{ chat.created_at | format_date }}</span>
+                {% if chat.model_used %}
+                <span class="tag" style="font-size:10px;">{{ chat.model_used }}</span>
+                {% endif %}
+                {% if chat.language and chat.language != 'en' %}
+                <span class="tag" style="font-size:10px;">🌐 {{ chat.language }}</span>
+                {% endif %}
+                <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);">{{ (chat.session_id or '')[:8] }}...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Answer -->
+          <div class="flex gap-2">
+            <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,212,255,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">⚖</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;color:var(--text-secondary);line-height:1.7;max-height:120px;overflow:hidden;position:relative;" id="ans-{{ chat.id }}">
+                {{ chat.answer | truncate_smart(400) }}
+                <div style="position:absolute;bottom:0;left:0;right:0;height:40px;background:linear-gradient(transparent,var(--bg-card));pointer-events:none;" id="fade-{{ chat.id }}"></div>
+              </div>
+              <button onclick="expandAnswer({{ chat.id }})" id="expand-{{ chat.id }}" class="btn btn-ghost btn-sm" style="margin-top:6px;font-size:12px;">
+                Show more <i class="fas fa-chevron-down"></i>
+              </button>
+
+              <!-- Meta row -->
+              <div class="flex gap-2" style="margin-top:10px;flex-wrap:wrap;align-items:center;">
+                {% if chat.confidence_score %}
+                <span class="confidence-badge {% if chat.confidence_score > 0.7 %}confidence-high{% elif chat.confidence_score > 0.4 %}confidence-medium{% else %}confidence-low{% endif %}">
+                  {{ "%.0f"|format(chat.confidence_score * 100) }}%
+                </span>
+                {% endif %}
+                {% if chat.hallucination_flag %}
+                <span class="confidence-badge confidence-low">⚠ Verify</span>
+                {% endif %}
+                {% if chat.response_time %}
+                <span class="tag" style="font-size:10px;">{{ "%.1f"|format(chat.response_time) }}s</span>
+                {% endif %}
+                {% if chat.is_helpful is not none %}
+                <span style="font-size:14px;">{% if chat.is_helpful %}👍{% else %}👎{% endif %}</span>
+                {% endif %}
+                <span style="margin-left:auto;font-size:13px;color:var(--text-muted);">
+                  {% if chat.tokens_used %}{{ chat.tokens_used }} tokens{% endif %}
+                </span>
+              </div>
+
+              <!-- Sources -->
+              {% if chat.sources %}
+              <div class="source-chips" style="margin-top:8px;">
+                {% for src in chat.to_dict().sources[:3] %}
+                <span class="source-chip">📄 {{ src.doc_title | truncate_smart(25) if src.doc_title else 'Source' }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if chats.pages > 1 %}
+    <div class="pagination" style="margin-top:20px;">
+      {% if chats.has_prev %}
+      <a href="{{ url_for('history', page=chats.prev_num, session=current_session) }}" class="page-btn">‹</a>
+      {% else %}
+      <span class="page-btn disabled">‹</span>
+      {% endif %}
+
+      {% for p in chats.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+      {% if p %}
+      <a href="{{ url_for('history', page=p, session=current_session) }}" class="page-btn {% if p == chats.page %}active{% endif %}">{{ p }}</a>
+      {% else %}
+      <span class="page-btn disabled">…</span>
+      {% endif %}
+      {% endfor %}
+
+      {% if chats.has_next %}
+      <a href="{{ url_for('history', page=chats.next_num, session=current_session) }}" class="page-btn">›</a>
+      {% else %}
+      <span class="page-btn disabled">›</span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="card" style="text-align:center;padding:64px;">
+      <div style="font-size:64px;margin-bottom:16px;">💬</div>
+      <div style="font-size:20px;font-weight:700;color:var(--text-heading);margin-bottom:8px;">No chat history yet</div>
+      <div style="font-size:14px;color:var(--text-muted);margin-bottom:24px;">Start a conversation with the AI Legal Assistant</div>
+      <a href="{{ url_for('chat') }}" class="btn btn-primary">
+        <i class="fas fa-comments"></i> Start AI Chat
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const fullAnswers = {};
+
+function expandAnswer(id) {
+  const ans = document.getElementById('ans-' + id);
+  const fade = document.getElementById('fade-' + id);
+  const btn = document.getElementById('expand-' + id);
+
+  if (ans.style.maxHeight && ans.style.maxHeight !== 'none') {
+    ans.style.maxHeight = 'none';
+    fade.style.display = 'none';
+    btn.innerHTML = 'Show less <i class="fas fa-chevron-up"></i>';
+  } else {
+    ans.style.maxHeight = '120px';
+    fade.style.display = 'block';
+    btn.innerHTML = 'Show more <i class="fas fa-chevron-down"></i>';
+  }
+}
+</script>
+{% endblock %}

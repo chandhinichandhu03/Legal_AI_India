@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — ⚖ LegalAI India</title>
+  <meta name="description" content="Sign in to AI Legal Assistant for Indian Law">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script>
+    const t = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+  </script>
+</head>
+<body>
+<div class="auth-page">
+  <!-- Animated background shapes -->
+  <div class="auth-bg-shapes">
+    <div class="auth-shape" style="width:500px;height:500px;background:#6c63ff;top:-200px;left:-200px;"></div>
+    <div class="auth-shape" style="width:400px;height:400px;background:#00d4ff;bottom:-150px;right:-150px;"></div>
+    <div class="auth-shape" style="width:300px;height:300px;background:#ffd700;top:50%;left:60%;transform:translate(-50%,-50%);opacity:0.15;"></div>
+  </div>
+
+  <!-- Floating legal icons -->
+  <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1;">
+    {% for icon, x, y, size, op in [('⚖','10%','15%','40px','0.1'),('📜','85%','20%','32px','0.08'),('🏛','75%','75%','36px','0.1'),('📋','15%','80%','28px','0.08'),('⚖','50%','10%','24px','0.06')] %}
+    <div style="position:absolute;left:{{ x }};top:{{ y }};font-size:{{ size }};opacity:{{ op }};animation:pulse 3s infinite {{ loop.index * 0.7 }}s;">{{ icon }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="auth-card" style="z-index:10;">
+    <!-- Logo -->
+    <div class="auth-logo">
+      <div class="logo-icon" style="width:56px;height:56px;font-size:28px;box-shadow:0 0 40px rgba(108,99,255,0.5);">⚖</div>
+      <div class="logo-text">
+        <div class="logo-title" style="font-size:24px;">LegalAI India</div>
+        <div class="logo-subtitle">AI Legal Assistant</div>
+      </div>
+    </div>
+
+    <h1 class="auth-title">Welcome back</h1>
+    <p class="auth-subtitle">Sign in to access your legal AI workspace</p>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }}" style="margin-bottom:16px;">
+      <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+      {{ message }}
+    </div>
+    {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('login') }}" id="loginForm">
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <div style="position:relative;">
+          <i class="fas fa-envelope" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);"></i>
+          <input type="email" name="email" id="email" class="form-control" style="padding-left:42px;" placeholder="your@email.com" required autocomplete="email">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div style="position:relative;">
+          <i class="fas fa-lock" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);"></i>
+          <input type="password" name="password" id="password" class="form-control" style="padding-left:42px;padding-right:42px;" placeholder="Enter password" required autocomplete="current-password">
+          <button type="button" onclick="togglePassword()" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);" id="eyeBtn">
+            <i class="fas fa-eye" id="eyeIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between" style="margin-bottom:20px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary);">
+          <input type="checkbox" name="remember" style="accent-color:var(--accent-primary);">
+          Remember me
+        </label>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-full" style="height:48px;font-size:15px;" id="loginBtn">
+        <i class="fas fa-sign-in-alt"></i> Sign In
+      </button>
+    </form>
+
+    <div class="divider" style="margin:24px 0;position:relative;text-align:center;">
+      <span style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--bg-card);padding:0 12px;font-size:12px;color:var(--text-muted);">OR</span>
+    </div>
+
+    <!-- Demo Credentials -->
+    <div style="background:var(--bg-input);border-radius:var(--radius-md);padding:16px;margin-bottom:20px;">
+      <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.1em;">Demo Credentials</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        {% for role, email, pw in [('Admin','admin@legalai.in','Admin@123'),('Lawyer','lawyer@legalai.in','Pass@123')] %}
+        <button type="button" onclick="fillDemo('{{ email }}','{{ pw }}')" class="btn btn-ghost btn-sm" style="font-size:11px;justify-content:flex-start;">
+          <span style="font-size:14px;">{% if role=='Admin' %}🛡{% else %}⚖{% endif %}</span>
+          {{ role }}: <code style="font-size:10px;background:none;border:none;padding:0;color:var(--accent-primary);">{{ pw }}</code>
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div style="text-align:center;font-size:14px;color:var(--text-secondary);">
+      Don't have an account?
+      <a href="{{ url_for('register') }}" style="color:var(--accent-primary);font-weight:600;text-decoration:none;">Register here</a>
+    </div>
+
+    <!-- Theme toggle -->
+    <div style="text-align:center;margin-top:16px;">
+      <button onclick="toggleTheme()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:12px;">
+        <i class="fas fa-moon" id="themeIcon"></i> Toggle Theme
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const savedTheme = localStorage.getItem('theme') || 'dark';
+document.documentElement.setAttribute('data-theme', savedTheme);
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  document.getElementById('themeIcon').className = next === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+}
+
+function togglePassword() {
+  const pw = document.getElementById('password');
+  const icon = document.getElementById('eyeIcon');
+  if (pw.type === 'password') { pw.type = 'text'; icon.className = 'fas fa-eye-slash'; }
+  else { pw.type = 'password'; icon.className = 'fas fa-eye'; }
+}
+
+function fillDemo(email, password) {
+  document.getElementById('email').value = email;
+  document.getElementById('password').value = password;
+}
+
+document.getElementById('loginForm').addEventListener('submit', function() {
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Signing in...';
+});
+</script>
+</body>
+</html>

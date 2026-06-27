@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% block title %}Predict Case Type — ⚖ LegalAI India{% endblock %}
+{% block page_title %}Case Type Predictor{% endblock %}
+{% block page_subtitle %}ML-powered classification using TF-IDF + Logistic Regression + Random Forest{% endblock %}
+
+{% block content %}
+<div class="grid grid-2">
+
+  <!-- ── Input Panel ────────────────────────────────────────────────── -->
+  <div>
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header">
+        <span class="card-title"><i class="fas fa-brain" style="color:var(--accent-primary)"></i> Case Description</span>
+        <span class="tag">ML Classifier</span>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('predict') }}" id="predictForm">
+          <div class="form-group">
+            <label class="form-label">Describe the legal case or paste case text</label>
+            <textarea name="text" id="caseText" class="form-control" rows="10"
+              placeholder="Example: The accused entered the victim's house forcefully at midnight and attacked with a sharp weapon causing grievous hurt. The victim was rushed to hospital. FIR has been filed under relevant IPC sections...">{{ request.form.get('text', '') }}</textarea>
+          </div>
+          <div class="flex gap-2">
+            <button type="submit" class="btn btn-primary" id="predictBtn">
+              <i class="fas fa-magic"></i> Predict Case Type
+            </button>
+            <button type="button" onclick="loadExample()" class="btn btn-ghost">
+              <i class="fas fa-lightbulb"></i> Load Example
+            </button>
+            <button type="button" onclick="clearText()" class="btn btn-ghost">
+              <i class="fas fa-times"></i> Clear
+            </button>
+          </div>
+        </form>
+
+        <!-- Quick API Test -->
+        <div style="margin-top:16px;padding:12px;background:var(--bg-input);border-radius:var(--radius-md);">
+          <div style="font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:8px;">⚡ QUICK PREDICT (AJAX)</div>
+          <div class="flex gap-2">
+            <input type="text" id="quickText" class="form-control" style="font-size:13px;" placeholder="Type case description and press Predict...">
+            <button onclick="quickPredict()" class="btn btn-primary btn-sm">Predict</button>
+          </div>
+          <div id="quickResult" style="margin-top:8px;font-size:13px;display:none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Examples -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">📚 Sample Case Descriptions</span></div>
+      <div class="card-body" style="padding:0;">
+        {% for example in [
+          ('Criminal', 'Accused stabbed victim with knife causing death. Witnesses present. FIR filed under IPC 302. Accused arrested.'),
+          ('Cyber Crime', 'Victim received phishing SMS. Clicked link, OTP shared. Bank account debited Rs 2 lakh without consent. IT Act 66C applicable.'),
+          ('Family', 'Wife alleges mental and physical cruelty by husband and in-laws. Dowry demand of Rs 5 lakh made. Filed under IPC 498A and DV Act.'),
+          ('Consumer', 'Online shopping order delivered with wrong product. Company denied refund. Consumer complaint filed before District Forum.'),
+          ('Labour', 'Factory worker dismissed without notice after 8 years. No retrenchment compensation paid. Filed under Industrial Disputes Act.'),
+          ('Property', 'Neighbour encroached 500 sq ft of plaintiff land and constructed compound wall. Survey report attached.'),
+        ] %}
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border-color);cursor:pointer;transition:var(--transition);"
+             onmouseover="this.style.background='var(--bg-card-hover)'" onmouseout="this.style.background=''"
+             onclick="loadSample(this.dataset.sample)"
+             data-sample="{{ example[1] }}">
+          <div class="flex items-center gap-2" style="margin-bottom:4px;">
+            <span class="result-badge badge-{{ example[0].lower().replace(' ','') }}" style="font-size:10px;">{{ example[0] }}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-secondary);">{{ example[1][:80] }}...</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Result Panel ───────────────────────────────────────────────── -->
+  <div>
+    {% if result %}
+    <!-- Prediction Result Card -->
+    <div class="prediction-card" style="margin-bottom:20px;">
+      <div style="font-size:13px;color:var(--text-muted);font-weight:600;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">
+        PREDICTED CASE TYPE
+      </div>
+      <div class="prediction-type">{{ result.predicted_type }}</div>
+      <div class="prediction-confidence">
+        Confidence: <strong style="color:{% if result.confidence > 0.7 %}var(--accent-green){% elif result.confidence > 0.4 %}var(--accent-gold){% else %}var(--accent-red){% endif %};">
+          {{ "%.1f"|format(result.confidence * 100) }}%
+        </strong>
+      </div>
+
+      <!-- Confidence ring (SVG) -->
+      <div style="margin:0 auto 20px;width:120px;height:120px;position:relative;">
+        {% set pct = (result.confidence * 100) | int %}
+        {% set dash = (pct / 100 * 283) | int %}
+        <svg viewBox="0 0 100 100" style="transform:rotate(-90deg)">
+          <circle cx="50" cy="50" r="45" fill="none" stroke="var(--bg-input)" stroke-width="8"/>
+          <circle cx="50" cy="50" r="45" fill="none"
+            stroke="{% if pct > 70 %}#00e676{% elif pct > 40 %}#ffd700{% else %}#ff5252{% endif %}"
+            stroke-width="8" stroke-linecap="round"
+            stroke-dasharray="{{ dash }} 283"
+            style="transition:stroke-dasharray 1s ease;"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:var(--text-heading);">
+          {{ pct }}%
+        </div>
+      </div>
+
+      <!-- Model info -->
+      <div class="flex gap-2" style="justify-content:center;flex-wrap:wrap;margin-bottom:16px;">
+        <span class="tag"><i class="fas fa-robot"></i> {{ result.model_name or 'ML Ensemble' }}</span>
+        {% if result.recommended_acts %}
+        <span class="tag" style="color:var(--accent-secondary);">📋 {{ result.recommended_acts | length }} acts recommended</span>
+        {% endif %}
+      </div>
+
+      <div class="flex gap-2" style="justify-content:center;">
+        <a href="{{ url_for('chat') }}" class="btn btn-primary btn-sm">
+          <i class="fas fa-comments"></i> Ask AI About This
+        </a>
+        <a href="{{ url_for('search', case_type=result.predicted_type) }}" class="btn btn-ghost btn-sm">
+          <i class="fas fa-search"></i> Find Similar Cases
+        </a>
+      </div>
+    </div>
+
+    <!-- Probability Distribution -->
+    {% if result.all_probabilities %}
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header"><span class="card-title">📊 Probability Distribution</span></div>
+      <div class="card-body">
+        {% for cat, prob in result.all_probabilities.items() | sort(attribute='1', reverse=True) %}
+        <div class="prob-bar" style="margin-bottom:10px;">
+          <div class="prob-label">{{ cat }}</div>
+          <div class="prob-track">
+            <div class="prob-fill" style="width:{{ (prob * 100) | int }}%;"></div>
+          </div>
+          <div class="prob-value">{{ "%.1f"|format(prob * 100) }}%</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Recommended Acts -->
+    {% if result.recommended_acts %}
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header"><span class="card-title">📋 Recommended Acts & Sections</span></div>
+      <div class="card-body" style="padding:0;">
+        {% for act in result.recommended_acts[:5] %}
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border-color);">
+          <div style="font-size:13px;font-weight:600;color:var(--text-heading);">{{ act }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Similar Cases -->
+    {% if similar_cases %}
+    <div class="card">
+      <div class="card-header"><span class="card-title">🔗 Similar Cases from Database</span></div>
+      <div class="card-body" style="padding:0;">
+        {% for case in similar_cases %}
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border-color);">
+          <div class="flex items-center gap-2" style="margin-bottom:4px;">
+            <span class="result-badge badge-{{ case.case_type.lower().replace(' ','') if case.case_type else 'criminal' }}" style="font-size:10px;">
+              {{ case.case_type or 'Unknown' }}
+            </span>
+            {% if case.similarity_score %}
+            <span style="font-size:11px;font-weight:700;color:var(--accent-green);">{{ "%.0f"|format(case.similarity_score * 100) }}% similar</span>
+            {% endif %}
+          </div>
+          <div style="font-size:13px;font-weight:600;color:var(--text-heading);">{{ case.title | truncate_smart(50) }}</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">{{ case.description | truncate_smart(100) }}</div>
+          {% if case.verdict %}
+          <div style="font-size:11px;color:var(--accent-gold);margin-top:4px;"><i class="fas fa-gavel"></i> {{ case.verdict | truncate_smart(60) }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Placeholder when no result yet -->
+    <div class="card" style="text-align:center;padding:48px;">
+      <div style="font-size:64px;margin-bottom:16px;">🎯</div>
+      <div style="font-size:20px;font-weight:700;color:var(--text-heading);margin-bottom:8px;">AI Case Classifier</div>
+      <div style="font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:300px;margin:0 auto 24px;">
+        Enter a case description on the left and click <strong>Predict</strong> to classify it using our ML ensemble.
+      </div>
+
+      <div class="grid grid-2" style="gap:12px;text-align:left;">
+        {% for cat, icon in [('Criminal','⚖'),('Civil','🏛'),('Family','👨‍👩‍👧'),('Cyber Crime','💻'),('Property','🏠'),('Labour','👷'),('Consumer','🛒'),('Traffic','🚦')] %}
+        <div style="padding:12px;background:var(--bg-input);border-radius:var(--radius-md);font-size:13px;">
+          <span style="margin-right:8px;">{{ icon }}</span>
+          <strong>{{ cat }}</strong>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div style="margin-top:24px;padding:16px;background:var(--bg-input);border-radius:var(--radius-md);text-align:left;">
+        <div style="font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:8px;">TECH STACK</div>
+        <div class="flex" style="flex-wrap:wrap;gap:6px;">
+          {% for tech in ['TF-IDF Vectorizer','Logistic Regression','Random Forest','Multinomial NB','Voting Classifier','Dynamic Programming','spaCy NER','BM25'] %}
+          <span class="tag" style="font-size:11px;">{{ tech }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const examples = [
+  "Accused broke into victim's house and stabbed the victim causing death. Witnesses present. CCTV footage available. FIR filed. Accused absconding.",
+  "Complainant booked air tickets online. Flight was cancelled. Company refused to refund the full amount despite repeated requests. Consumer forum complaint.",
+  "Employee employed for 12 years was suddenly terminated without notice or retrenchment compensation. Company claims financial losses as reason.",
+  "Wife alleges physical abuse and mental torture by husband and in-laws for dowry of Rs 10 lakh. Medical reports attached. Children aged 3 and 5.",
+  "Company accused of manufacturing and selling duplicate Ayurvedic medicines without proper licence. Quality tests failed. Drugs Act violation.",
+];
+
+function loadExample() {
+  const ex = examples[Math.floor(Math.random() * examples.length)];
+  document.getElementById('caseText').value = ex;
+}
+
+function loadSample(text) {
+  document.getElementById('caseText').value = text;
+  document.getElementById('caseText').scrollIntoView({ behavior: 'smooth' });
+}
+
+function clearText() {
+  document.getElementById('caseText').value = '';
+  document.getElementById('quickResult').style.display = 'none';
+}
+
+document.getElementById('predictForm').addEventListener('submit', function() {
+  const btn = document.getElementById('predictBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Predicting...';
+});
+
+async function quickPredict() {
+  const text = document.getElementById('quickText').value.trim();
+  if (!text) { showToast('Enter some case text first', 'warning'); return; }
+
+  const resultDiv = document.getElementById('quickResult');
+  resultDiv.style.display = 'block';
+  resultDiv.innerHTML = '<div class="flex items-center gap-2"><span class="spinner"></span> Analyzing...</div>';
+
+  const resp = await fetch('/api/predict', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text })
+  });
+  const data = await resp.json();
+
+  if (data.success) {
+    const r = data.result;
+    const pct = Math.round(r.confidence * 100);
+    const color = pct > 70 ? 'var(--accent-green)' : pct > 40 ? 'var(--accent-gold)' : 'var(--accent-red)';
+    resultDiv.innerHTML = `
+      <div class="flex items-center gap-2">
+        <span class="result-badge badge-${r.predicted_type.toLowerCase().replace(/ /g,'')}">
+          ${r.predicted_type}
+        </span>
+        <span style="font-weight:700;color:${color};">${pct}% confidence</span>
+        <span class="tag" style="font-size:11px;">${r.model_name || 'ML Ensemble'}</span>
+      </div>`;
+  } else {
+    resultDiv.innerHTML = `<span style="color:var(--accent-red);">Error: ${data.error}</span>`;
+  }
+}
+</script>
+{% endblock %}
