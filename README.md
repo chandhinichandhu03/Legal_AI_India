@@ -130,7 +130,7 @@ ollama pull llama3
 ```
 
 **Windows:**
-Download from → https://ollama.ai/download → Install → Run:
+Download from → https://ollama.com/download → Install → Run:
 ```cmd
 ollama serve
 ollama pull llama3
@@ -187,9 +187,14 @@ pip3 install -r requirements.txt --break-system-packages && pip3 install https:/
 python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt && pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0.tar.gz && python app.py
 ```
 
-**Windows (one line):**
+**Windows Command Prompt (one line):**
 ```cmd
 pip install -r requirements.txt && pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0.tar.gz && python app.py
+```
+
+**Windows PowerShell (one line):**
+```powershell
+pip install -r requirements.txt; if ($?) { pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0.tar.gz }; if ($?) { python app.py }
 ```
 
 Open → **http://localhost:8080**
@@ -373,3 +378,29 @@ Built as a final-year B.E./B.Tech Computer Science / AI project.
 ---
 
 *⚖ LegalAI India — Making Indian Law accessible to everyone through AI*
+
+
+run code in terminal
+
+py -m venv venv
+.\venv\Scripts\Activate.ps1
+
+pip install -r requirements.txt; if ($?) { pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0.tar.gz }; if ($?) { python app.py }
+
+---
+
+### 🤖 How to Set Up Ollama (For AI LLM Chat)
+
+If you want the AI chat assistant to generate smart responses (using Llama3), follow these steps to set up Ollama:
+
+1. **Download Ollama**: Download the installer for Windows from the official website: [ollama.com/download](https://ollama.com/download)
+2. **Install**: Run the installer and finish the setup.
+3. **Start Ollama Server**: Open a terminal and run:
+   ```cmd
+   ollama serve
+   ```
+4. **Pull/Download the Llama3 Model**: Open another terminal and run:
+   ```cmd
+   ollama pull llama3
+   ```
+   *(Note: The model download requires about 4.7 GB of disk space. Once the download is complete, the AI chat will automatically connect and respond).*
